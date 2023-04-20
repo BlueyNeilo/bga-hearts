@@ -18,13 +18,16 @@
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
-    "ebg/counter"
+    "ebg/counter",
+    "ebg/stock",
 ],
 function (dojo, declare) {
     return declare("bgagame.heartsblueinyellow", ebg.core.gamegui, {
         constructor: function(){
             console.log('heartsblueinyellow constructor');
-              
+            this.cardwidth = 72;
+            this.cardheight = 96;
+            
             // Here, you can init the global variables of your user interface
             // Example:
             // this.myGlobalValue = 0;
@@ -48,6 +51,23 @@ function (dojo, declare) {
         {
             console.log( "Starting game setup" );
             
+            // Player hand
+            this.playerHand = new ebg.stock();
+            this.playerHand.create(this, $('myhand'), this.cardwidth, this.cardheight);
+            this.playerHand.image_items_per_row = 13;
+            
+            // Create cards types:
+            for (var color = 1; color <= 4; color++) {
+                for (var value = 2; value <= 14; value++) {
+                    // Build card type id
+                    var card_type_id = this.getCardUniqueId(color, value);
+                    this.playerHand.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', card_type_id);
+                }
+            }
+
+            // 2 = hearts, 5 is 5, and 42 is the card id, which normally would come from db
+            this.playerHand.addToStockWithId( this.getCardUniqueId( 2, 5 ), 42 );
+
             // Setting up player boards
             for( var player_id in gamedatas.players )
             {
@@ -157,6 +177,11 @@ function (dojo, declare) {
             script.
         
         */
+
+        // Get card unique identifier based on its color and value
+        getCardUniqueId : function(color, value) {
+            return (color - 1) * 13 + (value - 2);
+        },
 
 
         ///////////////////////////////////////////////////

@@ -1,0 +1,19 @@
+env:
+  browser: true
+  es2021: true
+  node: true
+globals:
+  $: true
+  ebg: true
+  g_gamethemeurl: true
+plugins:
+  - requirejs
+extends:
+  - standard
+  - semistandard
+  - "plugin:requirejs/recommended"
+overrides: []
+parserOptions:
+  ecmaVersion: latest
+rules:
+  indent: ["error", 4]
