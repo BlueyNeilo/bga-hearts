@@ -71,8 +71,23 @@ function (dojo, declare) {
         }
       }
 
-      // 2 = hearts, 5 is 5, and 42 is the card id, which normally would come from db
-      this.playerHand.addToStockWithId(this.getCardUniqueId(2, 5), 42);
+      // Cards in player's hand
+      for (const i in this.gamedatas.hand) {
+        const card = this.gamedatas.hand[i];
+        const color = card.type;
+        const value = card.type_arg;
+        const cardId = this.getCardUniqueId(color, value);
+        this.playerHand.addToStockWithId(cardId, card.id);
+      }
+
+      // Cards played on table
+      for (const i in this.gamedatas.cardsontable) {
+        const card = this.gamedatas.cardsontable[i];
+        const color = card.type;
+        const value = card.type_arg;
+        const playerId = card.location_arg;
+        this.playCardOnTable(playerId, color, value, card.id);
+      }
 
       dojo.connect(
         this.playerHand,
@@ -125,7 +140,7 @@ function (dojo, declare) {
      * Called each time we are leaving a game state.
      * You can use this method to perform some user interface changes at this moment.
      *
-     * @param {*} stateName State the game is leaving
+     * @param {string} stateName State the game is leaving
      */
     onLeavingState: function (stateName) {
       console.log('Leaving state: ' + stateName);
@@ -149,8 +164,8 @@ function (dojo, declare) {
     /**
      * Manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
      *
-     * @param {*} stateName New state to transition to
-     * @param {*} _args ?
+     * @param {string} stateName New state to transition to
+     * @param {*} [_args] ?
      */
     onUpdateActionButtons: function (stateName, _args) {
       console.log('onUpdateActionButtons: ' + stateName);
@@ -187,6 +202,45 @@ function (dojo, declare) {
       return (color - 1) * 13 + (value - 2);
     },
 
+    /**
+     * Play card on the table for any player
+     *
+     * @param {number} playerId - player direction (N,S,W,E)
+     * @param {number} color - suit of card
+     * @param {number} value - value of card
+     * @param {number} cardId - card id
+     */
+    playCardOnTable: function (playerId, color, value, cardId) {
+      // playerId => direction
+      const cardOnTablePlayerId = 'cardontable_' + playerId;
+      const overallPlayerBoardPlayerId = 'overall_player_board_' + playerId;
+      const myHandItemCardId = 'myhand_item_' + cardId;
+      const playerTableCardPlayerId = 'playertablecard_' + playerId;
+
+      dojo.place(this.format_block('jstpl_cardontable', {
+        x: this.cardwidth * (value - 2),
+        y: this.cardheight * (color - 1),
+        player_id: playerId
+      }), playerTableCardPlayerId);
+
+      if (playerId !== this.playerId) {
+        // Some opponent played a card
+        // Move card from player panel
+        this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
+      } else {
+        // You played a card. If it exists in your hand, move card from there and remove
+        // corresponding item
+
+        if ($(myHandItemCardId)) {
+          this.placeOnObject(cardOnTablePlayerId, myHandItemCardId);
+          this.playerHand.removeFromStockById(cardId);
+        }
+      }
+
+      // In any case: move it to its final destination
+      this.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play();
+    },
+
     /// ////////////////////////////////////////////////
     /// / Player's action
 
@@ -206,7 +260,15 @@ function (dojo, declare) {
         if (this.checkAction('playCard', true)) {
           // Can play a card
           const cardId = items[0].id;
-          console.log('on playCard ' + cardId);
+          console.log('on playCard ' + cardId + ' ' + JSON.stringify(items[0]));
+
+          // type is (color - 1) * 13 + (value - 2)
+          const type = items[0].type;
+          const color = Math.floor(type / 13) + 1;
+          const value = type % 13 + 2;
+          console.log(type, color, value);
+
+          this.playCardOnTable(this.player_id, color, value, cardId);
 
           this.playerHand.unselectAll();
         } else if (this.checkAction('giveCards')) {
