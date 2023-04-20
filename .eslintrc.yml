@@ -16,4 +16,10 @@ overrides: []
 parserOptions:
   ecmaVersion: latest
 rules:
-  indent: ["error", 4]
+  max-len:
+    - error
+    - code: 80
+      comments: 120
+  new-cap:
+    - error
+    - newIsCap: false
