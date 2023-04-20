@@ -74,6 +74,11 @@ function (dojo, declare) {
       // 2 = hearts, 5 is 5, and 42 is the card id, which normally would come from db
       this.playerHand.addToStockWithId(this.getCardUniqueId(2, 5), 42);
 
+      dojo.connect(
+        this.playerHand,
+        'onChangeSelection', this, 'onPlayerHandSelectionChanged'
+      );
+
       // Setting up player boards
       // for (const playerId in gamedatas.players) {
       //   const player = gamedatas.players[playerId];
@@ -193,6 +198,24 @@ function (dojo, declare) {
       - check the action is possible at this game state.
       - make a call to the game server
     */
+
+    onPlayerHandSelectionChanged: function () {
+      const items = this.playerHand.getSelectedItems();
+
+      if (items.length > 0) {
+        if (this.checkAction('playCard', true)) {
+          // Can play a card
+          const cardId = items[0].id;
+          console.log('on playCard ' + cardId);
+
+          this.playerHand.unselectAll();
+        } else if (this.checkAction('giveCards')) {
+          // Can give cards => let the player select some cards
+        } else {
+          this.playerHand.unselectAll();
+        }
+      }
+    },
 
     /* Example:
 
