@@ -46,6 +46,8 @@ function (dojo, declare) {
     setup: function (gamedatas) {
       console.log('Starting game setup');
 
+      this.playerId = this.player_id;
+
       // Player hand
       this.playerHand = new ebg.stock();
       this.playerHand.create(
@@ -223,7 +225,7 @@ function (dojo, declare) {
         player_id: playerId
       }), playerTableCardPlayerId);
 
-      if (playerId !== this.playerId) {
+      if (+playerId !== +this.playerId) {
         // Some opponent played a card
         // Move card from player panel
         this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
