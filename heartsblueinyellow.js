@@ -257,20 +257,19 @@ function (dojo, declare) {
 
     onPlayerHandSelectionChanged: function () {
       const items = this.playerHand.getSelectedItems();
+      const action = 'playCard';
 
       if (items.length > 0) {
-        if (this.checkAction('playCard', true)) {
+        if (this.checkAction(action, true)) {
           // Can play a card
           const cardId = items[0].id;
-          console.log('on playCard ' + cardId + ' ' + JSON.stringify(items[0]));
+          const actionEndpoint = '/' + this.game_name + '/' + this.game_name +
+            '/' + action + '.html';
 
-          // type is (color - 1) * 13 + (value - 2)
-          const type = items[0].type;
-          const color = Math.floor(type / 13) + 1;
-          const value = type % 13 + 2;
-          console.log(type, color, value);
-
-          this.playCardOnTable(this.player_id, color, value, cardId);
+          this.ajaxcall(actionEndpoint, { id: cardId, lock: true }, this,
+            function (result) {},
+            function (isError) {}
+          );
 
           this.playerHand.unselectAll();
         } else if (this.checkAction('giveCards')) {
@@ -337,7 +336,17 @@ function (dojo, declare) {
       // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
       // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
       //
-    }
+
+      dojo.subscribe('newHand', this, 'notif_newHand');
+      dojo.subscribe('playCard', this, 'notif_playCard');
+
+      dojo.subscribe('trickWin', this, 'notif_empty');
+      this.notifqueue.setSynchronous('trickWin', 1000);
+
+      dojo.subscribe(
+        'giveAllCardsToPlayer', this, 'notif_giveAllCardsToPlayer'
+      );
+    },
 
     // TODO: from this point and below, you can write your game notifications handling methods
 
@@ -353,5 +362,46 @@ function (dojo, declare) {
           // TODO: play the card in the user interface.
       },
     */
+    notif_newHand: function (notif) {
+      // We received a received a new full hand of 13 cards.
+      this.playerHand.removeAll();
+
+      for (const i in notif.args.cards) {
+        const card = notif.args.cards[i];
+        const color = card.type;
+        const value = card.value;
+        this.playerHand.addToStockWithId(
+          this.getCardUniqueId(color, value), card.id
+        );
+      }
+    },
+
+    notif_playCard: function (notif) {
+      this.playCardOnTable(
+        notif.args.playerId,
+        notif.args.color,
+        notif.args.value,
+        notif.args.cardId
+      );
+    },
+
+    notif_empty: function (notif) { /* No code */ },
+
+    notif_giveAllCardsToPlayer: function (notif) {
+      const winnerId = notif.args.playerId;
+      const overallPlayerBoardWinnerId = 'overall_player_board_' + winnerId;
+
+      for (const playerId in this.gamedatas.players) {
+        const cardOnTablePlayerId = 'cardontable_' + playerId;
+        const anim = this.slideToObject(
+          cardOnTablePlayerId, overallPlayerBoardWinnerId
+        );
+
+        dojo.connect(anim, 'onEnd', function (node) {
+          dojo.destroy(node);
+        });
+        anim.play();
+      }
+    }
   });
 });
