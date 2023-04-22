@@ -418,7 +418,6 @@ class HeartsBlueInYellow extends Table
 
         // Apply scores to players
         foreach ($playerToPoints as $playerId => $points) {
-            self::error("in loop $playerId $points");
             if ($points != 0) {
                 $updateScoreSql = "
                     UPDATE player SET player_score=player_score-$points
