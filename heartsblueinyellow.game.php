@@ -22,6 +22,10 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 class HeartsBlueInYellow extends Table
 {
+    private Deck $cards;
+    public array $colors;
+    public array $values_label;
+
 	function __construct( )
 	{
         // Your global variables labels:
@@ -71,7 +75,7 @@ class HeartsBlueInYellow extends Table
             $color = array_shift( $default_colors );
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
         }
-        $sql .= implode( $values, ',' );
+        $sql .= implode( $values, [','] );
         self::DbQuery( $sql );
         self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
         self::reloadPlayersBasicInfos();
