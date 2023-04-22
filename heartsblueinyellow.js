@@ -346,6 +346,7 @@ function (dojo, declare) {
       dojo.subscribe(
         'giveAllCardsToPlayer', this, 'notif_giveAllCardsToPlayer'
       );
+      dojo.subscribe('newScores', this, 'notif_newScores');
     },
 
     // TODO: from this point and below, you can write your game notifications handling methods
@@ -369,7 +370,8 @@ function (dojo, declare) {
       for (const i in notif.args.cards) {
         const card = notif.args.cards[i];
         const color = card.type;
-        const value = card.value;
+        const value = card.type_arg;
+
         this.playerHand.addToStockWithId(
           this.getCardUniqueId(color, value), card.id
         );
@@ -401,6 +403,13 @@ function (dojo, declare) {
           dojo.destroy(node);
         });
         anim.play();
+      }
+    },
+
+    notif_newScores: function (notif) {
+      for (const playerId in notif.args.newScores) {
+        this.scoreCtrl[playerId].toValue(notif.args.newScores[playerId]);
+        console.log(this.scoreCtrl);
       }
     }
   });

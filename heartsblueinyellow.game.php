@@ -230,6 +230,13 @@ class HeartsBlueInYellow extends Table
         $currentCard = $this->cards->getCard($cardId);
         $value = $currentCard ['type_arg'];
         $color = $currentCard ['type'];
+
+        // First player of trick sets the trick suit
+        $currentTrickColor = self::getGameStateValue('trickColor');
+        if ($currentTrickColor == 0) {
+            self::setGameStateValue('trickColor', $color);
+        }
+
         // And notify
         self::notifyAllPlayers(
             'playCard',
@@ -330,7 +337,27 @@ class HeartsBlueInYellow extends Table
         if ($this->cards->countCardInLocation('cardsontable') == 4) {
             // This is the end of the trick
             // Move all cards to "cardswon" of the given player
-            $bestValuePlayerId = self::activeNextPlayer(); // TODO figure out winner of trick
+            $bestValue = 0;
+            $bestValuePlayerId = null;
+            $currentTrickColor = self::getGameStateValue('trickColor');
+            $cardsOnTable = $this->cards->getCardsInLocation('cardsontable');
+
+            foreach ($cardsOnTable as $card) {
+                $cardColor = $card ['type'];
+                $cardValue = $card ['type_arg'];
+                $cardPlayerId = $card ['location_arg'];
+
+                if ($cardColor == $currentTrickColor) {
+                    if ($bestValuePlayerId === null || $cardValue > $bestValue) {
+                        $bestValuePlayerId = $cardPlayerId;
+                        $bestValue = $cardValue;
+                    }
+                }
+            }
+
+            // Trick winner starts next trick
+            $this->gamestate->changeActivePlayer($bestValuePlayerId);
+
             $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $bestValuePlayerId);
 
             // Notify
@@ -371,6 +398,64 @@ class HeartsBlueInYellow extends Table
     }
 
     function stEndHand() {
+        // Count and score points, then end the game or go to the next hand.
+        $players = self::loadPlayersBasicInfos();
+
+        $playerToPoints = array ();
+        foreach ($players as $playerId => $player) {
+            $playerToPoints [$playerId] = 0;
+        }
+
+        // Gets all "hearts" + queen of spades (TODO)
+        $HEART = 2;
+        $cards = $this->cards->getCardsInLocation('cardswon');
+        foreach ($cards as $card) {
+            $playerId = $card ['location_arg'];
+            if ($card['type'] == $HEART) {
+                $playerToPoints [$playerId] ++;
+            }
+        }
+
+        // Apply scores to players
+        foreach ($playerToPoints as $playerId => $points) {
+            self::error("in loop $playerId $points");
+            if ($points != 0) {
+                $updateScoreSql = "
+                    UPDATE player SET player_score=player_score-$points
+                    WHERE player_id='$playerId'
+                ";
+                self::DbQuery($updateScoreSql);
+                self::notifyAllPlayers(
+                    'points',
+                    clienttranslate('${playerName} gets ${nbr} hearts and loses ${nbr} points'),
+                    array (
+                        'playerId' => $playerId,
+                        'playerName' => $players [$playerId] ['player_name'],
+                        'nbr' => $points
+                    )
+                );
+            } else {
+                // No point lost (just notify)
+                self::notifyAllPlayers("points", clienttranslate('${player_name} did not get any hearts'), array (
+                    'player_id' => $playerId,'player_name' => $players [$playerId] ['player_name'] ));
+            }
+        }
+
+        // Publish new scores
+        $selectScoresSql = "SELECT player_id, player_score FROM player";
+        $newScores = self::getCollectionFromDb($selectScoresSql, true);
+        self::notifyAllPlayers("newScores", '', array('newScores' => $newScores));
+
+        // Test if this is the end of the game
+        foreach ($newScores as $playerId => $score) {
+            if ($score <= -100) {
+                // Trigger the end of the game !
+                $this->gamestate->nextState("endGame");
+                return;
+            }
+        }
+
+        // Continue game with new hand
         $this->gamestate->nextState("nextHand");
     }
 
