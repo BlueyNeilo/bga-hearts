@@ -27,10 +27,6 @@ function (dojo, declare) {
       console.log('heartsblueinyellow constructor');
       this.cardwidth = 72;
       this.cardheight = 96;
-
-      // Here, you can init the global variables of your user interface
-      // Example:
-      // this.myGlobalValue = 0;
     },
 
     /**
@@ -41,7 +37,7 @@ function (dojo, declare) {
      * - when the game starts
      * - when a player refreshes the game page (F5)
      *
-     * @param {*} gamedatas contains all datas retrieved by your "getAllDatas" PHP method.
+     * @param {*} _gamedatas contains all datas retrieved by your "getAllDatas" PHP method.
      */
     setup: function (gamedatas) {
       console.log('Starting game setup');
@@ -59,7 +55,7 @@ function (dojo, declare) {
 
       this.playerHand.image_items_per_row = 13;
 
-      // Create cards types:
+      // Create cards types
       for (let color = 1; color <= 4; color++) {
         for (let value = 2; value <= 14; value++) {
           // Build card type id
@@ -91,21 +87,12 @@ function (dojo, declare) {
         this.playCardOnTable(playerId, color, value, card.id);
       }
 
+      // Connect card selection with handler
       dojo.connect(
         this.playerHand,
         'onChangeSelection', this, 'onPlayerHandSelectionChanged'
       );
 
-      // Setting up player boards
-      // for (const playerId in gamedatas.players) {
-      //   const player = gamedatas.players[playerId];
-
-      //   // TODO: Setting up players boards if needed
-      // }
-
-      // TODO: Set up your game interface here, according to "gamedatas"
-
-      // Setup game notifications to handle (see "setupNotifications" method below)
       this.setupNotifications();
 
       console.log('Ending game setup');
@@ -167,11 +154,12 @@ function (dojo, declare) {
      * Manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
      *
      * @param {string} stateName New state to transition to
-     * @param {*} [_args] ?
+     * @param {*} [_args] data passed from state transition
      */
     onUpdateActionButtons: function (stateName, _args) {
       console.log('onUpdateActionButtons: ' + stateName);
       /*
+        TODO
         if (this.isCurrentPlayerActive()) {
           switch (stateName) {
             /*
@@ -191,15 +179,15 @@ function (dojo, declare) {
       */
     },
 
-    /// ////////////////////////////////////////////////
-    /// / Utility methods
+    /* Utility methods */
 
-    /*
-      Here, you can defines some utility methods that you can use everywhere in your javascript
-      script.
-    */
-
-    // Get card unique identifier based on its color and value
+    /**
+     * Get card unique identifier based on its color and value
+     *
+     * @param {number} color suit of card
+     * @param {number} value value of card
+     * @returns Unique number derived from suit and value
+     */
     getCardUniqueId: function (color, value) {
       return (color - 1) * 13 + (value - 2);
     },
@@ -219,20 +207,19 @@ function (dojo, declare) {
       const myHandItemCardId = 'myhand_item_' + cardId;
       const playerTableCardPlayerId = 'playertablecard_' + playerId;
 
+      // Draw card on screen
       dojo.place(this.format_block('jstpl_cardontable', {
         x: this.cardwidth * (value - 2),
         y: this.cardheight * (color - 1),
         player_id: playerId
       }), playerTableCardPlayerId);
 
+      // Move card from player panel or from hand
       if (+playerId !== +this.playerId) {
-        // Some opponent played a card
-        // Move card from player panel
+        // Move card from opponent player panel
         this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
       } else {
-        // You played a card. If it exists in your hand, move card from there and remove
-        // corresponding item
-
+        // Play card from your own hand
         if ($(myHandItemCardId)) {
           this.placeOnObject(cardOnTablePlayerId, myHandItemCardId);
           this.playerHand.removeFromStockById(cardId);
@@ -243,17 +230,7 @@ function (dojo, declare) {
       this.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play();
     },
 
-    /// ////////////////////////////////////////////////
-    /// / Player's action
-
-    /*
-      Here, you are defining methods to handle player's action (ex: results of mouse click on
-      game objects).
-
-      Most of the time, these methods:
-      - check the action is possible at this game state.
-      - make a call to the game server
-    */
+    /* Player's action */
 
     onPlayerHandSelectionChanged: function () {
       const items = this.playerHand.getSelectedItems();
@@ -280,42 +257,6 @@ function (dojo, declare) {
       }
     },
 
-    /* Example:
-
-      onMyMethodToCall1: function (evt) {
-        console.log('onMyMethodToCall1');
-
-        // Preventing default browser reaction
-        dojo.stopEvent(evt);
-
-        // Check that this action is possible (see "possibleactions" in states.inc.php)
-        if (!this.checkAction('myAction')) { return; }
-
-        this.ajaxcall(
-          '/heartsblueinyellow/heartsblueinyellow/myAction.html',
-          {
-            lock: true
-            // myArgument1: arg1,
-            // myArgument2: arg2,
-            // ...
-          },
-          this, function (result) {
-
-            // What to do after the server call if it succeeded
-            // (most of the time: nothing)
-
-          }, function (isError) {
-
-            // What to do after the server call in anyway (success or failure)
-            // (most of the time: nothing)
-          }
-        );
-      },
-    */
-
-    /// ////////////////////////////////////////////////
-    /// / Reaction to cometD notifications
-
     /**
       * In this method, you associate each of your game notifications with your local method to handle it.
       *
@@ -324,18 +265,6 @@ function (dojo, declare) {
       */
     setupNotifications: function () {
       console.log('notifications subscriptions setup');
-
-      // TODO: here, associate your game notifications with local methods
-
-      // Example 1: standard notification handling
-      // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-
-      // Example 2: standard notification handling + tell the user interface to wait
-      //            during 3 seconds after calling the method in order to let the players
-      //            see what is happening in the game.
-      // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-      // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-      //
 
       dojo.subscribe('newHand', this, 'notif_newHand');
       dojo.subscribe('playCard', this, 'notif_playCard');
@@ -349,20 +278,8 @@ function (dojo, declare) {
       dojo.subscribe('newScores', this, 'notif_newScores');
     },
 
-    // TODO: from this point and below, you can write your game notifications handling methods
+    /* Notification handlers */
 
-    /* Example:
-
-      notif_cardPlayed: function( notif )
-      {
-          console.log( 'notif_cardPlayed' );
-          console.log( notif );
-
-          // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-
-          // TODO: play the card in the user interface.
-      },
-    */
     notif_newHand: function (notif) {
       // We received a received a new full hand of 13 cards.
       this.playerHand.removeAll();
