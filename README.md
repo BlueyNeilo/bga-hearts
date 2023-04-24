@@ -13,8 +13,8 @@ Dev experience
 - [x] remove example comment code
 - [x] typescript implementation
 - [ ] Automated unit tests
-- [ ] Add state transition diagram
-- [ ] Refactor _.js _.game.php into files under modules folder
+- [x] Add state transition diagram
+- [ ] Refactor _.ts _.game.php into files under modules or src folder
 
 Gameplay mechanics
 

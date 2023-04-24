@@ -1,0 +1,24 @@
+digraph D {
+n1 [label="1_gameSetup" color=red shape=Msquare];
+n20 [label="20_newHand" color=orange shape=diamond];
+n21 [label="21_giveCards" color=green shape=ellipse];
+n22 [label="22_takeCards" color=orange shape=diamond];
+n30 [label="30_newTrick" color=orange shape=diamond];
+n31 [label="31_playerTurn" color=blue shape=ellipse];
+n32 [label="32_nextPlayer" color=orange shape=diamond];
+n40 [label="40_endHand" color=orange shape=diamond];
+n99 [label="99_gameEnd" color=red shape=Msquare];
+n1 -> n20 [label=""];
+n20 -> n30 [label=""];
+n21 -> n22 [label="giveCards"];
+n21 -> n22 [label="skip"];
+n22 -> n30 [label="startHand"];
+n22 -> n30 [label="skip"];
+n30 -> n31 [label=""];
+n31 -> n32 [label="playCard"];
+n32 -> n31 [label="nextPlayer"];
+n32 -> n30 [label="nextTrick"];
+n32 -> n40 [label="endHand"];
+n40 -> n20 [label="nextHand"];
+n40 -> n99 [label="endGame"];
+}
