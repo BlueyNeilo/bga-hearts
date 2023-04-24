@@ -1,0 +1,16 @@
+{
+  "rootDir": ".",
+  "compilerOptions": {
+    "target": "es5",
+    "module": "amd",
+    "strictNullChecks": true,
+
+    "esModuleInterop": true,
+    "lib": ["dom", "esnext"],
+    "sourceMap": false,
+    "typeRoots": ["src/types", "./types", "./node_modules/@types"],
+    "outFile": "heartsblueinyellow.js"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

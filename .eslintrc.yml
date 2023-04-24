@@ -1,25 +1,51 @@
+---
+root: true
 env:
   browser: true
   es2021: true
   node: true
-globals:
-  $: true
-  ebg: true
-  g_gamethemeurl: true
-plugins:
-  - requirejs
-extends:
-  - standard
-  - semistandard
-  - "plugin:requirejs/recommended"
-overrides: []
+  amd: true
 parserOptions:
   ecmaVersion: latest
-rules:
-  max-len:
-    - error
-    - code: 80
-      comments: 120
-  new-cap:
-    - error
-    - newIsCap: false
+overrides:
+  # Typescript config
+  - files: ['*.ts']
+    extends:
+      - standard-with-typescript
+      # Stricter checking
+      # - 'plugin:@typescript-eslint/eslint-recommended'
+      # - 'plugin:@typescript-eslint/recommended-requiring-type-checking'
+      # - 'plugin:@typescript-eslint/strict'
+    rules:
+      max-len:
+        - error
+        - code: 80
+          comments: 120
+      new-cap: off
+      '@typescript-eslint/semi':
+        - error
+        - never
+      '@typescript-eslint/comma-dangle': off
+    parserOptions:
+      project: ['./tsconfig.json']
+  # Javascript config (generated from typescript files)
+  - files: ['*.js']
+    globals:
+      ebg: true
+      g_gamethemeurl: true
+      $: true
+    extends:
+      - standard
+      - prettier
+    rules:
+      max-len:
+        - error
+        - code: 80
+          comments: 120
+      new-cap: off
+      semi:
+        - error
+        - always
+      # Ignore auto-generated var optimisation
+      no-redeclare: off
+      no-var: off

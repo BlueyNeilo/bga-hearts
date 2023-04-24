@@ -14,19 +14,21 @@
  * In this file, you are describing the logic of your user interface, in Typescript language.
  *
  */
+
 define([
   'dojo',
   'dojo/_base/declare',
   'ebg/core/gamegui',
   'ebg/counter',
-  'ebg/stock'
+  'ebg/stock',
 ], function (dojo, declare) {
   return declare('bgagame.heartsblueinyellow', ebg.core.gamegui, {
     constructor: function () {
-      console.log('heartsblueinyellow constructor');
-      this.cardwidth = 72;
-      this.cardheight = 96;
+      console.log('heartsblueinyellow constructor')
+      this.cardwidth = 72
+      this.cardheight = 96
     },
+
     /**
      * This method must set up the game user interface
      * according to current game situation specified in parameters.
@@ -38,57 +40,63 @@ define([
      * @param {*} _gamedatas contains all datas retrieved by your "getAllDatas" PHP method.
      */
     setup: function (gamedatas) {
-      console.log('Starting game setup');
-      this.playerId = this.player_id;
+      console.log('Starting game setup')
+
+      this.playerId = this.player_id
+
       // Player hand
-      this.playerHand = new ebg.stock();
-      this.playerHand.create(
-        this,
-        $('myhand'),
-        this.cardwidth,
-        this.cardheight
-      );
-      this.playerHand.image_items_per_row = 13;
+      this.playerHand = new ebg.stock()
+      this.playerHand.create(this, $('myhand'), this.cardwidth, this.cardheight)
+
+      this.playerHand.image_items_per_row = 13
+
       // Create cards types
-      for (var color = 1; color <= 4; color++) {
-        for (var value = 2; value <= 14; value++) {
+      for (let color = 1; color <= 4; color++) {
+        for (let value = 2; value <= 14; value++) {
           // Build card type id
-          var cardTypeId = this.getCardUniqueId(color, value);
+          const cardTypeId = this.getCardUniqueId(color, value)
           this.playerHand.addItemType(
             cardTypeId,
             cardTypeId,
             g_gamethemeurl + 'img/cards.jpg',
-            cardTypeId
-          );
+            cardTypeId,
+          )
         }
       }
+
       // Cards in player's hand
-      for (var i in this.gamedatas.hand) {
-        var card = this.gamedatas.hand[i];
-        var color = card.type;
-        var value = card.type_arg;
-        var cardId = this.getCardUniqueId(color, value);
-        this.playerHand.addToStockWithId(cardId, card.id);
+      for (const i in this.gamedatas.hand) {
+        const card = this.gamedatas.hand[i]
+        const color = card.type
+        const value = card.type_arg
+        const cardId = this.getCardUniqueId(color, value)
+        this.playerHand.addToStockWithId(cardId, card.id)
       }
+
       // Cards played on table
-      for (var i in this.gamedatas.cardsontable) {
-        var card = this.gamedatas.cardsontable[i];
-        var color = card.type;
-        var value = card.type_arg;
-        var playerId = card.location_arg;
-        this.playCardOnTable(playerId, color, value, card.id);
+      for (const i in this.gamedatas.cardsontable) {
+        const card = this.gamedatas.cardsontable[i]
+        const color = card.type
+        const value = card.type_arg
+        const playerId = card.location_arg
+        this.playCardOnTable(playerId, color, value, card.id)
       }
+
       // Connect card selection with handler
       dojo.connect(
         this.playerHand,
         'onChangeSelection',
         this,
-        'onPlayerHandSelectionChanged'
-      );
-      this.setupNotifications();
-      console.log('Ending game setup');
+        'onPlayerHandSelectionChanged',
+      )
+
+      this.setupNotifications()
+
+      console.log('Ending game setup')
     },
+
     /* Game & client states */
+
     /**
      * Called each time we are entering into a new game state.
      *
@@ -96,21 +104,23 @@ define([
      * @param {*} _args
      */
     onEnteringState: function (stateName, _args) {
-      console.log('Entering state: ' + stateName);
+      console.log('Entering state: ' + stateName)
+
       switch (stateName) {
         /* Example:
-        
-                  case 'myGameState':
-        
-                      // Show some HTML block at this game state
-                      dojo.style( 'my_html_block_id', 'display', 'block' );
-        
-                      break;
-                */
+
+          case 'myGameState':
+
+              // Show some HTML block at this game state
+              dojo.style( 'my_html_block_id', 'display', 'block' );
+
+              break;
+        */
         case 'dummmy':
-          break;
+          break
       }
     },
+
     /**
      * Called each time we are leaving a game state.
      * You can use this method to perform some user interface changes at this moment.
@@ -118,21 +128,24 @@ define([
      * @param {string} stateName State the game is leaving
      */
     onLeavingState: function (stateName) {
-      console.log('Leaving state: ' + stateName);
+      console.log('Leaving state: ' + stateName)
+
       switch (stateName) {
         /* Example:
-        
-                  case 'myGameState':
-        
-                    // Hide the HTML block we are displaying only during this game state
-                    dojo.style( 'my_html_block_id', 'display', 'none' );
-        
-                    break;
-                */
+
+          case 'myGameState':
+
+            // Hide the HTML block we are displaying only during this game state
+            dojo.style( 'my_html_block_id', 'display', 'none' );
+
+            break;
+        */
+
         case 'dummmy':
-          break;
+          break
       }
     },
+
     /**
      * Manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
      *
@@ -140,28 +153,30 @@ define([
      * @param {*} [_args] data passed from state transition
      */
     onUpdateActionButtons: function (stateName, _args) {
-      console.log('onUpdateActionButtons: ' + stateName); /*
+      console.log('onUpdateActionButtons: ' + stateName) /*
+      /*
+        TODO
+        if (this.isCurrentPlayerActive()) {
+          switch (stateName) {
             /*
-              TODO
-              if (this.isCurrentPlayerActive()) {
-                switch (stateName) {
-                  /*
-                    Example:
-      
-                    case 'myGameState':
-      
-                      // Add 3 action buttons in the action status bar:
-      
-                      this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
-                      this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
-                      this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
-                      break;
-                  */ /*
+              Example:
+
+              case 'myGameState':
+
+                // Add 3 action buttons in the action status bar:
+
+                this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
+                this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
+                this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
+                break;
+            */ /*
           }
         }
       */
     },
+
     /* Utility methods */
+
     /**
      * Get card unique identifier based on its color and value
      *
@@ -170,8 +185,9 @@ define([
      * @returns Unique number derived from suit and value
      */
     getCardUniqueId: function (color, value) {
-      return (color - 1) * 13 + (value - 2);
+      return (color - 1) * 13 + (value - 2)
     },
+
     /**
      * Play card on the table for any player
      *
@@ -182,64 +198,67 @@ define([
      */
     playCardOnTable: function (playerId, color, value, cardId) {
       // playerId => direction
-      var cardOnTablePlayerId = 'cardontable_' + playerId;
-      var overallPlayerBoardPlayerId = 'overall_player_board_' + playerId;
-      var myHandItemCardId = 'myhand_item_' + cardId;
-      var playerTableCardPlayerId = 'playertablecard_' + playerId;
+      const cardOnTablePlayerId = 'cardontable_' + playerId
+      const overallPlayerBoardPlayerId = 'overall_player_board_' + playerId
+      const myHandItemCardId = 'myhand_item_' + cardId
+      const playerTableCardPlayerId = 'playertablecard_' + playerId
+
       // Draw card on screen
       dojo.place(
         this.format_block('jstpl_cardontable', {
           x: this.cardwidth * (value - 2),
           y: this.cardheight * (color - 1),
-          player_id: playerId
+          player_id: playerId,
         }),
-        playerTableCardPlayerId
-      );
+        playerTableCardPlayerId,
+      )
+
       // Move card from player panel or from hand
       if (+playerId !== +this.playerId) {
         // Move card from opponent player panel
-        this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
+        this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId)
       } else {
         // Play card from your own hand
         if ($(myHandItemCardId)) {
-          this.placeOnObject(cardOnTablePlayerId, myHandItemCardId);
-          this.playerHand.removeFromStockById(cardId);
+          this.placeOnObject(cardOnTablePlayerId, myHandItemCardId)
+          this.playerHand.removeFromStockById(cardId)
         }
       }
+
       // In any case: move it to its final destination
-      this.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play();
+      this.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play()
     },
+
     /* Player's action */
+
     onPlayerHandSelectionChanged: function () {
-      var items = this.playerHand.getSelectedItems();
-      var action = 'playCard';
+      const items = this.playerHand.getSelectedItems()
+      const action = 'playCard'
+
       if (items.length > 0) {
         if (this.checkAction(action, true)) {
           // Can play a card
-          var cardId = items[0].id;
-          var actionEndpoint =
-            '/' +
-            this.game_name +
-            '/' +
-            this.game_name +
-            '/' +
-            action +
-            '.html';
+          const cardId = items[0].id
+          const actionEndpoint =
+            '/' + this.game_name + '/' + this.game_name + '/' + action + '.html'
+
           this.ajaxcall(
             actionEndpoint,
             { id: cardId, lock: true },
             this,
             function (result) {},
-            function (isError) {}
-          );
-          this.playerHand.unselectAll();
+            function (isError) {},
+          )
+
+          this.playerHand.unselectAll()
         } else if (this.checkAction('giveCards')) {
           // Can give cards => let the player select some cards
         } else {
-          this.playerHand.unselectAll();
+          this.playerHand.unselectAll()
         }
       }
     },
+
     /**
      * In this method, you associate each of your game notifications with your local method to handle it.
      *
@@ -247,63 +266,72 @@ define([
      * "notifyAllPlayers" and "notifyPlayer" calls in your heartsblueinyellow.game.php file.
      */
     setupNotifications: function () {
-      console.log('notifications subscriptions setup');
-      dojo.subscribe('newHand', this, 'notif_newHand');
-      dojo.subscribe('playCard', this, 'notif_playCard');
-      dojo.subscribe('trickWin', this, 'notif_empty');
-      this.notifqueue.setSynchronous('trickWin', 1000);
-      dojo.subscribe(
-        'giveAllCardsToPlayer',
-        this,
-        'notif_giveAllCardsToPlayer'
-      );
-      dojo.subscribe('newScores', this, 'notif_newScores');
+      console.log('notifications subscriptions setup')
+
+      dojo.subscribe('newHand', this, 'notif_newHand')
+      dojo.subscribe('playCard', this, 'notif_playCard')
+
+      dojo.subscribe('trickWin', this, 'notif_empty')
+      this.notifqueue.setSynchronous('trickWin', 1000)
+
+      dojo.subscribe('giveAllCardsToPlayer', this, 'notif_giveAllCardsToPlayer')
+      dojo.subscribe('newScores', this, 'notif_newScores')
     },
+
     /* Notification handlers */
+
     notif_newHand: function (notif) {
       // We received a received a new full hand of 13 cards.
-      this.playerHand.removeAll();
-      for (var i in notif.args.cards) {
-        var card = notif.args.cards[i];
-        var color = card.type;
-        var value = card.type_arg;
+      this.playerHand.removeAll()
+
+      for (const i in notif.args.cards) {
+        const card = notif.args.cards[i]
+        const color = card.type
+        const value = card.type_arg
+
         this.playerHand.addToStockWithId(
           this.getCardUniqueId(color, value),
-          card.id
-        );
+          card.id,
+        )
       }
     },
+
     notif_playCard: function (notif) {
       this.playCardOnTable(
         notif.args.playerId,
         notif.args.color,
         notif.args.value,
-        notif.args.cardId
-      );
+        notif.args.cardId,
+      )
     },
+
     notif_empty: function (notif) {
       /* No code */
     },
+
     notif_giveAllCardsToPlayer: function (notif) {
-      var winnerId = notif.args.playerId;
-      var overallPlayerBoardWinnerId = 'overall_player_board_' + winnerId;
-      for (var playerId in this.gamedatas.players) {
-        var cardOnTablePlayerId = 'cardontable_' + playerId;
-        var anim = this.slideToObject(
+      const winnerId = notif.args.playerId
+      const overallPlayerBoardWinnerId = 'overall_player_board_' + winnerId
+
+      for (const playerId in this.gamedatas.players) {
+        const cardOnTablePlayerId = 'cardontable_' + playerId
+        const anim = this.slideToObject(
           cardOnTablePlayerId,
-          overallPlayerBoardWinnerId
-        );
+          overallPlayerBoardWinnerId,
+        )
+
         dojo.connect(anim, 'onEnd', function (node) {
-          dojo.destroy(node);
-        });
-        anim.play();
+          dojo.destroy(node)
+        })
+        anim.play()
       }
     },
+
     notif_newScores: function (notif) {
-      for (var playerId in notif.args.newScores) {
-        this.scoreCtrl[playerId].toValue(notif.args.newScores[playerId]);
-        console.log(this.scoreCtrl);
+      for (const playerId in notif.args.newScores) {
+        this.scoreCtrl[playerId].toValue(notif.args.newScores[playerId])
+        console.log(this.scoreCtrl)
       }
-    }
-  });
-});
+    },
+  })
+})
