@@ -92,7 +92,7 @@ define([
     /**
      * Called each time we are entering into a new game state.
      *
-     * @param {*} stateName
+     * @param {string} stateName
      * @param {*} _args
      */
     onEnteringState: function (stateName, _args) {
@@ -182,10 +182,11 @@ define([
      */
     playCardOnTable: function (playerId, color, value, cardId) {
       // playerId => direction
-      var cardOnTablePlayerId = 'cardontable_' + playerId;
-      var overallPlayerBoardPlayerId = 'overall_player_board_' + playerId;
-      var myHandItemCardId = 'myhand_item_' + cardId;
-      var playerTableCardPlayerId = 'playertablecard_' + playerId;
+      var cardOnTablePlayerId = 'cardontable_' + playerId.toString();
+      var overallPlayerBoardPlayerId =
+        'overall_player_board_' + playerId.toString();
+      var myHandItemCardId = 'myhand_item_' + cardId.toString();
+      var playerTableCardPlayerId = 'playertablecard_' + playerId.toString();
       // Draw card on screen
       dojo.place(
         this.format_block('jstpl_cardontable', {
@@ -201,7 +202,7 @@ define([
         this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
       } else {
         // Play card from your own hand
-        if ($(myHandItemCardId)) {
+        if ($(myHandItemCardId) != null) {
           this.placeOnObject(cardOnTablePlayerId, myHandItemCardId);
           this.playerHand.removeFromStockById(cardId);
         }
@@ -212,19 +213,23 @@ define([
     /* Player's action */
     onPlayerHandSelectionChanged: function () {
       var items = this.playerHand.getSelectedItems();
-      var action = 'playCard';
+      var playCardAction = 'playCard';
+      var giveCardsAction = 'giveCards';
+      var hasChosenPlayCard = this.checkAction(playCardAction, true);
+      var hasChosenGiveCards = this.checkAction(giveCardsAction);
       if (items.length > 0) {
-        if (this.checkAction(action, true)) {
+        if (hasChosenPlayCard) {
           // Can play a card
           var cardId = items[0].id;
-          var actionEndpoint =
-            '/' +
-            this.game_name +
-            '/' +
-            this.game_name +
-            '/' +
-            action +
-            '.html';
+          var actionEndpoint = ''.concat(
+            '/',
+            this.game_name,
+            '/',
+            this.game_name.toString(),
+            '/',
+            playCardAction,
+            '.html'
+          );
           this.ajaxcall(
             actionEndpoint,
             { id: cardId, lock: true },
@@ -233,7 +238,7 @@ define([
             function (isError) {}
           );
           this.playerHand.unselectAll();
-        } else if (this.checkAction('giveCards')) {
+        } else if (hasChosenGiveCards) {
           // Can give cards => let the player select some cards
         } else {
           this.playerHand.unselectAll();
@@ -286,7 +291,8 @@ define([
     },
     notif_giveAllCardsToPlayer: function (notif) {
       var winnerId = notif.args.playerId;
-      var overallPlayerBoardWinnerId = 'overall_player_board_' + winnerId;
+      var overallPlayerBoardWinnerId =
+        'overall_player_board_' + winnerId.toString();
       for (var playerId in this.gamedatas.players) {
         var cardOnTablePlayerId = 'cardontable_' + playerId;
         var anim = this.slideToObject(

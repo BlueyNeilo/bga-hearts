@@ -96,7 +96,7 @@ declare class GameGui {
     blinking?: boolean,
     color?: string,
   ): void
-  checkAction(action: any): boolean
+  checkAction(action: any, nomessage?: boolean): boolean
   ajaxcall(
     url: string,
     args: object,

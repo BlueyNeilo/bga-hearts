@@ -100,10 +100,10 @@ define([
     /**
      * Called each time we are entering into a new game state.
      *
-     * @param {*} stateName
+     * @param {string} stateName
      * @param {*} _args
      */
-    onEnteringState: function (stateName, _args) {
+    onEnteringState: function (stateName: string, _args: any[]) {
       console.log('Entering state: ' + stateName)
 
       switch (stateName) {
@@ -127,7 +127,7 @@ define([
      *
      * @param {string} stateName State the game is leaving
      */
-    onLeavingState: function (stateName) {
+    onLeavingState: function (stateName: string) {
       console.log('Leaving state: ' + stateName)
 
       switch (stateName) {
@@ -152,7 +152,7 @@ define([
      * @param {string} stateName New state to transition to
      * @param {*} [_args] data passed from state transition
      */
-    onUpdateActionButtons: function (stateName, _args) {
+    onUpdateActionButtons: function (stateName: string, _args: any[]) {
       console.log('onUpdateActionButtons: ' + stateName) /*
       /*
         TODO
@@ -196,12 +196,18 @@ define([
      * @param {number} value - value of card
      * @param {number} cardId - card id
      */
-    playCardOnTable: function (playerId, color, value, cardId) {
+    playCardOnTable: function (
+      playerId: number,
+      color: number,
+      value: number,
+      cardId: number,
+    ) {
       // playerId => direction
-      const cardOnTablePlayerId = 'cardontable_' + playerId
-      const overallPlayerBoardPlayerId = 'overall_player_board_' + playerId
-      const myHandItemCardId = 'myhand_item_' + cardId
-      const playerTableCardPlayerId = 'playertablecard_' + playerId
+      const cardOnTablePlayerId = 'cardontable_' + playerId.toString()
+      const overallPlayerBoardPlayerId =
+        'overall_player_board_' + playerId.toString()
+      const myHandItemCardId = 'myhand_item_' + cardId.toString()
+      const playerTableCardPlayerId = 'playertablecard_' + playerId.toString()
 
       // Draw card on screen
       dojo.place(
@@ -219,7 +225,7 @@ define([
         this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId)
       } else {
         // Play card from your own hand
-        if ($(myHandItemCardId)) {
+        if ($(myHandItemCardId) != null) {
           this.placeOnObject(cardOnTablePlayerId, myHandItemCardId)
           this.playerHand.removeFromStockById(cardId)
         }
@@ -233,14 +239,25 @@ define([
 
     onPlayerHandSelectionChanged: function () {
       const items = this.playerHand.getSelectedItems()
-      const action = 'playCard'
+      const playCardAction: string = 'playCard'
+      const giveCardsAction: string = 'giveCards'
+
+      const hasChosenPlayCard: boolean = this.checkAction(playCardAction, true)
+      const hasChosenGiveCards: boolean = this.checkAction(giveCardsAction)
 
       if (items.length > 0) {
-        if (this.checkAction(action, true)) {
+        if (hasChosenPlayCard) {
           // Can play a card
           const cardId = items[0].id
-          const actionEndpoint =
-            '/' + this.game_name + '/' + this.game_name + '/' + action + '.html'
+          const actionEndpoint = ''.concat(
+            '/',
+            this.game_name,
+            '/',
+            this.game_name.toString(),
+            '/',
+            playCardAction,
+            '.html',
+          )
 
           this.ajaxcall(
             actionEndpoint,
@@ -251,7 +268,7 @@ define([
           )
 
           this.playerHand.unselectAll()
-        } else if (this.checkAction('giveCards')) {
+        } else if (hasChosenGiveCards) {
           // Can give cards => let the player select some cards
         } else {
           this.playerHand.unselectAll()
@@ -310,8 +327,9 @@ define([
     },
 
     notif_giveAllCardsToPlayer: function (notif) {
-      const winnerId = notif.args.playerId
-      const overallPlayerBoardWinnerId = 'overall_player_board_' + winnerId
+      const winnerId: number = notif.args.playerId
+      const overallPlayerBoardWinnerId =
+        'overall_player_board_' + winnerId.toString()
 
       for (const playerId in this.gamedatas.players) {
         const cardOnTablePlayerId = 'cardontable_' + playerId
