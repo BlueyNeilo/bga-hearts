@@ -300,14 +300,18 @@ class Main extends GameGui {
   setupNotifications(): void {
     console.log('notifications subscriptions setup')
 
-    dojo.subscribe('newHand', this, 'notif_newHand')
-    dojo.subscribe('playCard', this, 'notif_playCard')
+    const notifications = [
+      'newHand',
+      'playCard',
+      'trickWin',
+      'giveAllCardsToPlayer',
+      'newScores',
+    ]
 
-    dojo.subscribe('trickWin', this, 'notif_empty')
+    notifications.forEach((notification) =>
+      dojo.subscribe(notification, this, 'notif_' + notification),
+    )
     this.notifqueue.setSynchronous('trickWin', 1000)
-
-    dojo.subscribe('giveAllCardsToPlayer', this, 'notif_giveAllCardsToPlayer')
-    dojo.subscribe('newScores', this, 'notif_newScores')
   }
 
   /* Notification handlers */
@@ -336,6 +340,8 @@ class Main extends GameGui {
       notif.args.cardId,
     )
   }
+
+  notif_trickWin = this.notif_empty
 
   notif_empty(notif: Notif): void {
     /* No code */

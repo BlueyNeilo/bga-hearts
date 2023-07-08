@@ -69,6 +69,7 @@ var Main = /** @class */ (function (_super) {
   __extends(Main, _super);
   function Main() {
     var _this = _super.call(this) || this;
+    _this.notif_trickWin = _this.notif_empty;
     console.log('heartsblueinyellow constructor');
     _this.cardwidth = 72;
     _this.cardheight = 96;
@@ -142,12 +143,12 @@ var Main = /** @class */ (function (_super) {
     console.log('Entering state: ' + stateName);
     switch (stateName) {
       /* Example:
-      
+
                 case 'myGameState':
-      
+
                     // Show some HTML block at this game state
                     dojo.style( 'my_html_block_id', 'display', 'block' );
-      
+
                     break;
               */
       case 'dummmy':
@@ -164,12 +165,12 @@ var Main = /** @class */ (function (_super) {
     console.log('Leaving state: ' + stateName);
     switch (stateName) {
       /* Example:
-      
+
                 case 'myGameState':
-      
+
                   // Hide the HTML block we are displaying only during this game state
                   dojo.style( 'my_html_block_id', 'display', 'none' );
-      
+
                   break;
               */
       case 'dummmy':
@@ -190,11 +191,11 @@ var Main = /** @class */ (function (_super) {
               switch (stateName) {
                 /*
                   Example:
-    
+
                   case 'myGameState':
-    
+
                     // Add 3 action buttons in the action status bar:
-    
+
                     this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
                     this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
@@ -295,13 +296,19 @@ var Main = /** @class */ (function (_super) {
    * "notifyAllPlayers" and "notifyPlayer" calls in your heartsblueinyellow.game.php file.
    */
   Main.prototype.setupNotifications = function () {
+    var _this = this;
     console.log('notifications subscriptions setup');
-    dojo.subscribe('newHand', this, 'notif_newHand');
-    dojo.subscribe('playCard', this, 'notif_playCard');
-    dojo.subscribe('trickWin', this, 'notif_empty');
+    var notifications = [
+      'newHand',
+      'playCard',
+      'trickWin',
+      'giveAllCardsToPlayer',
+      'newScores'
+    ];
+    notifications.forEach(function (notification) {
+      return dojo.subscribe(notification, _this, 'notif_' + notification);
+    });
     this.notifqueue.setSynchronous('trickWin', 1000);
-    dojo.subscribe('giveAllCardsToPlayer', this, 'notif_giveAllCardsToPlayer');
-    dojo.subscribe('newScores', this, 'notif_newScores');
   };
   /* Notification handlers */
   Main.prototype.notif_newHand = function (notif) {
