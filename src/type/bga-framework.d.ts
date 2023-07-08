@@ -1,18 +1,18 @@
 /* eslint-disable */
 // Copied from https://github.com/elaskavaia/bga-dojoless/blob/main/src/types/bga-framework.d.ts
 
-declare let gamegui: GameGui
-declare let g_replayFrom: number | undefined
-declare let g_gamethemeurl: string
-declare let g_themeurl: string
-declare let g_archive_mode: boolean
+declare var gamegui: GameGui
+declare var g_replayFrom: number | undefined
+declare var g_gamethemeurl: string
+declare var g_themeurl: string
+declare var g_archive_mode: boolean
 declare function _(str: string): string
 declare function __(site: string, str: string): string
-// declare function $(text: string | Element): HTMLElement;
+// declare function $(text: string | Element): HTMLElement
 
 declare const define
 declare const ebg
-declare const dojo
+declare const dojo // TODO: Use dojo-typings
 declare const dijit
 declare type eventhandler = (event?: any) => void
 
@@ -85,6 +85,9 @@ declare class GameGui {
   on_client_state: boolean
   tooltips: string[]
   is_client_only: boolean
+  prefs: any[]
+  table_id: number
+  metasiteurl: string
 
   isCurrentPlayerActive(): boolean
   getActivePlayerId(): number
@@ -92,11 +95,11 @@ declare class GameGui {
     id: string,
     label: string,
     method: string | eventhandler,
-    destination?: string,
-    blinking?: boolean,
-    color?: string,
+    destination?: string | undefined,
+    blinking?: boolean | undefined,
+    color?: string | undefined,
   ): void
-  checkAction(action: any, nomessage?: boolean): boolean
+  checkAction(action: any, nomessage?: boolean | undefined): boolean
   ajaxcall(
     url: string,
     args: object,
@@ -107,83 +110,87 @@ declare class GameGui {
   connect(node: ElementOrId, ontype: string, handler: any): void
   disconnect(node: ElementOrId, ontype: string): void
   connectClass(cls: string, ontype: string, handler: any): void
-
   setup(gamedatas: object): void
   onEnteringState(stateName: string, args: { args: any } | null): void
   onLeavingState(stateName: string): void
   onUpdateActionButtons(stateName: string, args: any): void
   setupNotifications(): void
-
   setClientState(newState: string, args: object): void
   restoreServerGameState(): void
-
   showMessage(msg: string, type: string): void
   showMoveUnauthorized(): void
-  onScriptError(msg: string, url?: string, linenumber?: number): void
-  inherited(args: any): any
+  onScriptError(
+    msg: string,
+    url?: string | undefined,
+    linenumber?: number | undefined,
+  ): void
+  inherited(args: any)
   format_string_recursive(log: string, args: any[]): string
   clienttranslate_string(text: string): string
-
+  onScreenWidthChange(): void
+  format_block(variable: string, args: object): string
   slideToObject(
     mobile_obj: string | Element,
     target_obj: string | Element,
-    duration?: number,
-    delay?: number,
+    duration?: number | undefined,
+    delay?: number | undefined,
   ): Animation
   slideToObjectPos(
     mobile_obj: string | Element,
     target_obj: string | Element,
     target_x: number,
     target_y: number,
-    duration?: number,
-    delay?: number,
+    duration?: number | undefined,
+    delay?: number | undefined,
   ): Animation
   slideTemporaryObject(
     mobile_obj_html: string,
     mobile_obj_parent: string | Element,
     from: string | Element,
     to: string | Element,
-    duration?: number,
-    delay?: number,
+    duration?: number | undefined,
+    delay?: number | undefined,
   ): Animation
-
+  placeOnObject(child: ElementOrId, parent: ElementOrId): void
   displayScoring(
     anchor_id: string,
     color: string,
-    score: number | string,
-    duration?: number,
-    offset_x?: number,
-    offset_y?: number,
+    score: string | number,
+    duration?: number | undefined,
+    offset_x?: number | undefined,
+    offset_y?: number | undefined,
   ): void
   showBubble(
     anchor_id: string,
     text: string,
-    delay?: number,
-    duration?: number,
-    custom_class?: string,
+    delay?: number | undefined,
+    duration?: number | undefined,
+    custom_class?: string | undefined,
   ): void
   updateCounters(counters: any): void
-
   addTooltip(
     nodeId: string,
     helpStringTranslated: string,
     actionStringTranslated: string,
-    delay?: number,
+    delay?: number | undefined,
   ): void
-  addTooltipHtml(nodeId: string, html: string, delay?: number): void
-  addTooltipHtmlToClass(cssClass: string, html: string, delay?: number): void
+  addTooltipHtml(nodeId: string, html: string, delay?: number | undefined): void
+  addTooltipHtmlToClass(
+    cssClass: string,
+    html: string,
+    delay?: number | undefined,
+  ): void
   addTooltipToClass(
     cssClass: string,
     helpStringTranslated: string,
     actionStringTranslated: string,
-    delay?: number,
+    delay?: number | undefined,
   ): void
   removeTooltip(nodeId: string): void
-
   confirmationDialog(
     message: string,
     yesHandler: (param: any) => void,
-    noHandler?: (param: any) => void,
+    noHandler?: ((param: any) => void) | undefined,
     param?: any,
   ): void
   multipleChoiceDialog(
@@ -191,4 +198,6 @@ declare class GameGui {
     choices: any[],
     callback: (choice: number) => void,
   ): void
+  enablePlayerPanel(player_id: number): void
+  disablePlayerPanel(player_id: number): void
 }

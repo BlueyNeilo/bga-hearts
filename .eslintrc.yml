@@ -26,6 +26,7 @@ overrides:
         - error
         - never
       '@typescript-eslint/comma-dangle': off
+      '@typescript-eslint/space-before-function-paren': off
     parserOptions:
       project: ['./tsconfig.json']
   # Javascript config (generated from typescript files)
@@ -49,3 +50,6 @@ overrides:
       # Ignore auto-generated var optimisation
       no-redeclare: off
       no-var: off
+      # Ignore dojo weirdness
+      no-proto: off
+      no-undef: off

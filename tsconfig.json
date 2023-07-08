@@ -8,7 +8,12 @@
     "esModuleInterop": true,
     "lib": ["dom", "esnext"],
     "sourceMap": false,
-    "typeRoots": ["src/types", "./types", "./node_modules/@types"],
+    "typeRoots": [
+      "src/types",
+      "./types",
+      "./node_modules/@types",
+      "./node_modules/dojo-typings/*"
+    ],
     "outFile": "heartsblueinyellow.js"
   },
   "include": ["src/**/*.ts"],
