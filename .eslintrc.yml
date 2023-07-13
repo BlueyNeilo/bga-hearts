@@ -50,6 +50,7 @@ overrides:
       # Ignore auto-generated var optimisation
       no-redeclare: off
       no-var: off
+      no-void: off
       # Ignore dojo weirdness
       no-proto: off
       no-undef: off
