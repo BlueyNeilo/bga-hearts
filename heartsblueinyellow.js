@@ -29,6 +29,21 @@ var __extends =
           : ((__.prototype = b.prototype), new __());
     };
   })();
+var __assign =
+  (this && this.__assign) ||
+  function () {
+    __assign =
+      Object.assign ||
+      function (t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+          s = arguments[i];
+          for (var p in s)
+            if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+      };
+    return __assign.apply(this, arguments);
+  };
 define([
   'dojo',
   'dojo/_base/declare',
@@ -72,6 +87,7 @@ var Main = /** @class */ (function (_super) {
     console.log('heartsblueinyellow constructor');
     _this.cardwidth = 72;
     _this.cardheight = 96;
+    _this.playerHand = new PlayerHand(_this, new ebg.stock());
     _this.notificationSystem = new NotificationSystem(_this);
     _this.stateSystem = new StateSystem(_this);
     return _this;
@@ -89,48 +105,21 @@ var Main = /** @class */ (function (_super) {
   Main.prototype.setup = function (_gamedatas) {
     console.log('Starting game setup');
     this.playerId = this.player_id;
-    // Player hand
-    this.playerHand = new ebg.stock();
-    this.playerHand.create(this, $('myhand'), this.cardwidth, this.cardheight);
-    this.playerHand.image_items_per_row = 13;
-    // Create cards types
-    for (var color = 1; color <= 4; color++) {
-      for (var value = 2; value <= 14; value++) {
-        // Build card type id
-        var cardTypeId = this.getCardUniqueId(color, value);
-        this.playerHand.addItemType(
-          cardTypeId,
-          cardTypeId,
-          g_gamethemeurl + 'img/cards.jpg',
-          cardTypeId
-        );
-      }
-    }
-    // Cards in player's hand
-    for (var i in this.gamedatas.hand) {
-      var card = this.gamedatas.hand[i];
-      var color = card.type;
-      var value = card.type_arg;
-      var cardId = this.getCardUniqueId(color, value);
-      this.playerHand.addToStockWithId(cardId, card.id);
-    }
-    // Cards played on table
+    this.gameName = this.game_name;
+    this.playerHand.setup();
+    this.setupTableCards();
+    this.notificationSystem.setup();
+    console.log('Ending game setup');
+  };
+  /* Cards played on table */
+  Main.prototype.setupTableCards = function () {
     for (var i in this.gamedatas.cardsontable) {
       var card = this.gamedatas.cardsontable[i];
       var color = card.type;
       var value = card.type_arg;
       var playerId = card.location_arg;
-      this.playCardOnTable(playerId, color, value, card.id);
+      Util.Display.playCardOnTable(this, playerId, color, value, card.id);
     }
-    // Connect card selection with handler
-    dojo.connect(
-      this.playerHand,
-      'onChangeSelection',
-      this,
-      'onPlayerHandSelectionChanged'
-    );
-    this.notificationSystem.setup();
-    console.log('Ending game setup');
   };
   /* Game & client states */
   /**
@@ -140,8 +129,14 @@ var Main = /** @class */ (function (_super) {
    * @param {*} args
    */
   Main.prototype.onEnteringState = function (stateName, args) {
+    var _a, _b;
     console.log('Entering state: ' + stateName);
-    this.stateSystem.states[stateName].onEnterState(args.args);
+    (_a = this.stateSystem.states[stateName]) === null || _a === void 0
+      ? void 0
+      : _a.onEnterState(args.args);
+    (_b = this.stateSystem.states[stateName]) !== null && _b !== void 0
+      ? _b
+      : console.log('Missing state: ' + stateName);
   };
   /**
    * Called each time we are leaving a game state.
@@ -150,8 +145,14 @@ var Main = /** @class */ (function (_super) {
    * @param {string} stateName State the game is leaving
    */
   Main.prototype.onLeavingState = function (stateName) {
+    var _a, _b;
     console.log('Leaving state: ' + stateName);
-    this.stateSystem.states[stateName].onLeaveState();
+    (_a = this.stateSystem.states[stateName]) === null || _a === void 0
+      ? void 0
+      : _a.onLeaveState();
+    (_b = this.stateSystem.states[stateName]) !== null && _b !== void 0
+      ? _b
+      : console.log('Missing state: ' + stateName);
   };
   /**
    * Manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
@@ -160,97 +161,21 @@ var Main = /** @class */ (function (_super) {
    * @param {*} [args] data passed from state transition
    */
   Main.prototype.onUpdateActionButtons = function (stateName, args) {
+    var _a, _b, _c;
     console.log('onUpdateActionButtons: ' + stateName);
     if (this.isCurrentPlayerActive()) {
-      this.stateSystem.states[stateName].handleAction(args);
+      (_a = this.stateSystem.states[stateName]) === null || _a === void 0
+        ? void 0
+        : _a.handleAction(args);
     } else if (!this.isSpectator) {
       // Multiplayer action
-      this.stateSystem.states[stateName].handleOutOfTurnAction(args);
+      (_b = this.stateSystem.states[stateName]) === null || _b === void 0
+        ? void 0
+        : _b.handleOutOfTurnAction(args);
     }
-  };
-  /* Utility methods */
-  /**
-   * Get card unique identifier based on its color and value
-   *
-   * @param {number} color suit of card
-   * @param {number} value value of card
-   * @returns Unique number derived from suit and value
-   */
-  Main.prototype.getCardUniqueId = function (color, value) {
-    return (color - 1) * 13 + (value - 2);
-  };
-  /**
-   * Play card on the table for any player
-   *
-   * @param {number} playerId - player direction (N,S,W,E)
-   * @param {number} color - suit of card
-   * @param {number} value - value of card
-   * @param {number} cardId - card id
-   */
-  Main.prototype.playCardOnTable = function (playerId, color, value, cardId) {
-    // playerId => direction
-    var cardOnTablePlayerId = 'cardontable_' + playerId.toString();
-    var overallPlayerBoardPlayerId =
-      'overall_player_board_' + playerId.toString();
-    var myHandItemCardId = 'myhand_item_' + cardId.toString();
-    var playerTableCardPlayerId = 'playertablecard_' + playerId.toString();
-    // Draw card on screen
-    dojo.place(
-      this.format_block('jstpl_cardontable', {
-        x: this.cardwidth * (value - 2),
-        y: this.cardheight * (color - 1),
-        player_id: playerId
-      }),
-      playerTableCardPlayerId
-    );
-    // Move card from player panel or from hand
-    if (+playerId !== +this.playerId) {
-      // Move card from opponent player panel
-      this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
-    } else {
-      // Play card from your own hand
-      if ($(myHandItemCardId) != null) {
-        this.placeOnObject(cardOnTablePlayerId, myHandItemCardId);
-        this.playerHand.removeFromStockById(cardId);
-      }
-    }
-    // In any case: move it to its final destination
-    this.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play();
-  };
-  /* Player's action */
-  Main.prototype.onPlayerHandSelectionChanged = function () {
-    var items = this.playerHand.getSelectedItems();
-    var playCardAction = 'playCard';
-    var giveCardsAction = 'giveCards';
-    if (items.length > 0) {
-      var hasChosenPlayCard = this.checkAction(playCardAction, true);
-      var hasChosenGiveCards = this.checkAction(giveCardsAction, true);
-      if (hasChosenPlayCard) {
-        // Can play a card
-        var cardId = items[0].id;
-        var actionEndpoint = ''.concat(
-          '/',
-          this.game_name,
-          '/',
-          this.game_name.toString(),
-          '/',
-          playCardAction,
-          '.html'
-        );
-        this.ajaxcall(
-          actionEndpoint,
-          { id: cardId, lock: true },
-          this,
-          function (result) {},
-          function (isError) {}
-        );
-        this.playerHand.unselectAll();
-      } else if (hasChosenGiveCards) {
-        // Can give cards => let the player select some cards
-      } else {
-        this.playerHand.unselectAll();
-      }
-    }
+    (_c = this.stateSystem.states[stateName]) !== null && _c !== void 0
+      ? _c
+      : console.log('Missing state: ' + stateName);
   };
   return Main;
 })(GameGui);
@@ -300,18 +225,11 @@ var NotificationSystem = /** @class */ (function () {
   NotificationSystem.prototype.notif_newHand = function (notif) {
     // We received a received a new full hand of 13 cards.
     this.main.playerHand.removeAll();
-    for (var i in notif.args.cards) {
-      var card = notif.args.cards[i];
-      var color = card.type;
-      var value = card.type_arg;
-      this.main.playerHand.addToStockWithId(
-        this.main.getCardUniqueId(color, value),
-        card.id
-      );
-    }
+    this.main.playerHand.constructHand(notif.args.cards);
   };
   NotificationSystem.prototype.notif_playCard = function (notif) {
-    this.main.playCardOnTable(
+    Util.Display.playCardOnTable(
+      this.main,
       notif.args.playerId,
       notif.args.color,
       notif.args.value,
@@ -345,6 +263,91 @@ var NotificationSystem = /** @class */ (function () {
     }
   };
   return NotificationSystem;
+})();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+var PlayerHand = /** @class */ (function () {
+  function PlayerHand(main, stock) {
+    this.main = main;
+    this.stock = stock;
+  }
+  PlayerHand.prototype.setup = function () {
+    // Player hand
+    this.stock.create(
+      this.main,
+      $('myhand'),
+      this.main.cardwidth,
+      this.main.cardheight
+    );
+    this.stock.image_items_per_row = 13;
+    // Create cards types
+    for (var color = 1; color <= 4; color++) {
+      for (var value = 2; value <= 14; value++) {
+        // Build card type id
+        var cardTypeId = this.getCardUniqueId(color, value);
+        this.stock.addItemType(
+          cardTypeId,
+          cardTypeId,
+          g_gamethemeurl + 'img/cards.jpg',
+          cardTypeId
+        );
+      }
+    }
+    // Cards in player's hand
+    this.constructHand(this.main.gamedatas.hand);
+    // Connect card selection with handler
+    dojo.connect(
+      this.stock,
+      'onChangeSelection',
+      this,
+      'onPlayerHandSelectionChanged'
+    );
+  };
+  /* Player's action */
+  PlayerHand.prototype.onPlayerHandSelectionChanged = function () {
+    var items = this.stock.getSelectedItems();
+    var playCardAction = 'playCard';
+    var giveCardsAction = 'giveCards';
+    if (items.length > 0) {
+      var hasChosenPlayCard = this.main.checkAction(playCardAction, true);
+      var hasChosenGiveCards = this.main.checkAction(giveCardsAction, true);
+      if (hasChosenPlayCard) {
+        // Can play a card
+        var cardId = items[0].id;
+        Util.Ajax.sendAction(this.main, playCardAction, { id: cardId });
+        this.stock.unselectAll();
+      } else if (hasChosenGiveCards) {
+        // Can give cards => let the player select some cards
+      } else {
+        this.stock.unselectAll();
+      }
+    }
+  };
+  /**
+   * Get card unique identifier based on its color and value
+   *
+   * @param {number} color suit of card
+   * @param {number} value value of card
+   * @returns Unique number derived from suit and value
+   */
+  PlayerHand.prototype.getCardUniqueId = function (color, value) {
+    return (color - 1) * 13 + (value - 2);
+  };
+  PlayerHand.prototype.constructHand = function (cards) {
+    for (var i in cards) {
+      var card = cards[i];
+      var color = card.type;
+      var value = card.type_arg;
+      var cardId = this.getCardUniqueId(color, value);
+      this.stock.addToStockWithId(cardId, card.id);
+    }
+  };
+  PlayerHand.prototype.removeCard = function (cardId) {
+    this.stock.removeFromStockById(cardId);
+  };
+  PlayerHand.prototype.removeAll = function () {
+    this.stock.removeAll();
+  };
+  return PlayerHand;
 })();
 var State = /** @class */ (function () {
   function State(
@@ -386,3 +389,77 @@ var StateSystem = /** @class */ (function () {
   }
   return StateSystem;
 })();
+/**
+ * Utility methods
+ */
+// eslint-disable-next-line
+var Util;
+(function (Util) {
+  // eslint-disable-next-line
+  var Ajax;
+  (function (Ajax) {
+    function sendAction(main, action, args) {
+      var actionEndpoint = ''.concat(
+        '/',
+        main.gameName,
+        '/',
+        main.gameName,
+        '/',
+        action,
+        '.html'
+      );
+      main.ajaxcall(
+        actionEndpoint,
+        __assign(__assign({}, args), { lock: true }),
+        this,
+        function (result) {},
+        function (isError) {}
+      );
+    }
+    Ajax.sendAction = sendAction;
+  })((Ajax = Util.Ajax || (Util.Ajax = {})));
+  // eslint-disable-next-line
+  var Display;
+  (function (Display) {
+    /**
+     * Play card on the table for any player
+     *
+     * @param {Main} main - main game program
+     * @param {number} playerId - player direction (N,S,W,E)
+     * @param {number} color - suit of card
+     * @param {number} value - value of card
+     * @param {number} cardId - card id
+     */
+    function playCardOnTable(main, playerId, color, value, cardId) {
+      // playerId => direction
+      var cardOnTablePlayerId = 'cardontable_' + playerId.toString();
+      var overallPlayerBoardPlayerId =
+        'overall_player_board_' + playerId.toString();
+      var myHandItemCardId = 'myhand_item_' + cardId.toString();
+      var playerTableCardPlayerId = 'playertablecard_' + playerId.toString();
+      // Draw card on screen
+      dojo.place(
+        main.format_block('jstpl_cardontable', {
+          x: main.cardwidth * (value - 2),
+          y: main.cardheight * (color - 1),
+          player_id: playerId
+        }),
+        playerTableCardPlayerId
+      );
+      // Move card from player panel or from hand
+      if (+playerId !== +main.playerId) {
+        // Move card from opponent player panel
+        main.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
+      } else {
+        // Play card from your own hand
+        if ($(myHandItemCardId) != null) {
+          main.placeOnObject(cardOnTablePlayerId, myHandItemCardId);
+          main.playerHand.removeCard(cardId);
+        }
+      }
+      // In any case: move it to its final destination
+      main.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play();
+    }
+    Display.playCardOnTable = playCardOnTable;
+  })((Display = Util.Display || (Util.Display = {})));
+})(Util || (Util = {}));

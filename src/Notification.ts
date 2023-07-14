@@ -54,21 +54,12 @@ class NotificationSystem {
   notif_newHand(notif: Notif): void {
     // We received a received a new full hand of 13 cards.
     this.main.playerHand.removeAll()
-
-    for (const i in notif.args.cards) {
-      const card = notif.args.cards[i]
-      const color = card.type
-      const value = card.type_arg
-
-      this.main.playerHand.addToStockWithId(
-        this.main.getCardUniqueId(color, value),
-        card.id,
-      )
-    }
+    this.main.playerHand.constructHand(notif.args.cards)
   }
 
   notif_playCard(notif: Notif): void {
-    this.main.playCardOnTable(
+    Util.Display.playCardOnTable(
+      this.main,
       notif.args.playerId,
       notif.args.color,
       notif.args.value,

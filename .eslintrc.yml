@@ -51,6 +51,8 @@ overrides:
       no-redeclare: off
       no-var: off
       no-void: off
+      no-unused-expressions: off
+      no-unused-vars: off
       # Ignore dojo weirdness
       no-proto: off
       no-undef: off

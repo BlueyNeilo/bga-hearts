@@ -28,12 +28,14 @@ GameGui = /** @class */ (function () {
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Main extends GameGui {
-  private readonly cardwidth: number
-  private readonly cardheight: number
   private readonly notificationSystem: NotificationSystem
   private readonly stateSystem: StateSystem
-  private playerId: number
-  public playerHand: any // Stock
+
+  public readonly cardwidth: number
+  public readonly cardheight: number
+  public playerId: number
+  public gameName: string
+  public playerHand: PlayerHand
 
   constructor() {
     super()
@@ -41,6 +43,7 @@ class Main extends GameGui {
     this.cardwidth = 72
     this.cardheight = 96
 
+    this.playerHand = new PlayerHand(this, new ebg.stock())
     this.notificationSystem = new NotificationSystem(this)
     this.stateSystem = new StateSystem(this)
   }
@@ -59,56 +62,25 @@ class Main extends GameGui {
     console.log('Starting game setup')
 
     this.playerId = this.player_id
+    this.gameName = this.game_name
 
-    // Player hand
-    this.playerHand = new ebg.stock()
-    this.playerHand.create(this, $('myhand'), this.cardwidth, this.cardheight)
+    this.playerHand.setup()
+    this.setupTableCards()
+    this.notificationSystem.setup()
 
-    this.playerHand.image_items_per_row = 13
+    console.log('Ending game setup')
+  }
 
-    // Create cards types
-    for (let color = 1; color <= 4; color++) {
-      for (let value = 2; value <= 14; value++) {
-        // Build card type id
-        const cardTypeId = this.getCardUniqueId(color, value)
-        this.playerHand.addItemType(
-          cardTypeId,
-          cardTypeId,
-          g_gamethemeurl + 'img/cards.jpg',
-          cardTypeId,
-        )
-      }
-    }
-
-    // Cards in player's hand
-    for (const i in this.gamedatas.hand) {
-      const card = this.gamedatas.hand[i]
-      const color = card.type
-      const value = card.type_arg
-      const cardId = this.getCardUniqueId(color, value)
-      this.playerHand.addToStockWithId(cardId, card.id)
-    }
-
-    // Cards played on table
+  /* Cards played on table */
+  setupTableCards(): void {
     for (const i in this.gamedatas.cardsontable) {
       const card = this.gamedatas.cardsontable[i]
       const color = card.type
       const value = card.type_arg
       const playerId = card.location_arg
-      this.playCardOnTable(playerId, color, value, card.id)
+
+      Util.Display.playCardOnTable(this, playerId, color, value, card.id)
     }
-
-    // Connect card selection with handler
-    dojo.connect(
-      this.playerHand,
-      'onChangeSelection',
-      this,
-      'onPlayerHandSelectionChanged',
-    )
-
-    this.notificationSystem.setup()
-
-    console.log('Ending game setup')
   }
 
   /* Game & client states */
@@ -121,7 +93,10 @@ class Main extends GameGui {
    */
   onEnteringState(stateName: string, args: { args: any }): void {
     console.log('Entering state: ' + stateName)
-    this.stateSystem.states[stateName].onEnterState(args.args)
+    this.stateSystem.states[stateName]?.onEnterState(args.args)
+
+    this.stateSystem.states[stateName] ??
+      console.log('Missing state: ' + stateName)
   }
 
   /**
@@ -132,7 +107,10 @@ class Main extends GameGui {
    */
   onLeavingState(stateName: string): void {
     console.log('Leaving state: ' + stateName)
-    this.stateSystem.states[stateName].onLeaveState()
+    this.stateSystem.states[stateName]?.onLeaveState()
+
+    this.stateSystem.states[stateName] ??
+      console.log('Missing state: ' + stateName)
   }
 
   /**
@@ -145,114 +123,13 @@ class Main extends GameGui {
     console.log('onUpdateActionButtons: ' + stateName)
 
     if (this.isCurrentPlayerActive()) {
-      this.stateSystem.states[stateName].handleAction(args)
+      this.stateSystem.states[stateName]?.handleAction(args)
     } else if (!this.isSpectator) {
       // Multiplayer action
-      this.stateSystem.states[stateName].handleOutOfTurnAction(args)
-    }
-  }
-
-  /* Utility methods */
-
-  /**
-   * Get card unique identifier based on its color and value
-   *
-   * @param {number} color suit of card
-   * @param {number} value value of card
-   * @returns Unique number derived from suit and value
-   */
-  getCardUniqueId(color: number, value: number): number {
-    return (color - 1) * 13 + (value - 2)
-  }
-
-  /**
-   * Play card on the table for any player
-   *
-   * @param {number} playerId - player direction (N,S,W,E)
-   * @param {number} color - suit of card
-   * @param {number} value - value of card
-   * @param {number} cardId - card id
-   */
-  playCardOnTable(
-    playerId: number,
-    color: number,
-    value: number,
-    cardId: number,
-  ): void {
-    // playerId => direction
-    const cardOnTablePlayerId = 'cardontable_' + playerId.toString()
-    const overallPlayerBoardPlayerId =
-      'overall_player_board_' + playerId.toString()
-    const myHandItemCardId = 'myhand_item_' + cardId.toString()
-    const playerTableCardPlayerId = 'playertablecard_' + playerId.toString()
-
-    // Draw card on screen
-    dojo.place(
-      this.format_block('jstpl_cardontable', {
-        x: this.cardwidth * (value - 2),
-        y: this.cardheight * (color - 1),
-        player_id: playerId,
-      }),
-      playerTableCardPlayerId,
-    )
-
-    // Move card from player panel or from hand
-    if (+playerId !== +this.playerId) {
-      // Move card from opponent player panel
-      this.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId)
-    } else {
-      // Play card from your own hand
-      if ($(myHandItemCardId) != null) {
-        this.placeOnObject(cardOnTablePlayerId, myHandItemCardId)
-        this.playerHand.removeFromStockById(cardId)
-      }
+      this.stateSystem.states[stateName]?.handleOutOfTurnAction(args)
     }
 
-    // In any case: move it to its final destination
-    this.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play()
-  }
-
-  /* Player's action */
-
-  onPlayerHandSelectionChanged(): void {
-    const items = this.playerHand.getSelectedItems()
-    const playCardAction: string = 'playCard'
-    const giveCardsAction: string = 'giveCards'
-
-    if (items.length > 0) {
-      const hasChosenPlayCard: boolean = this.checkAction(playCardAction, true)
-      const hasChosenGiveCards: boolean = this.checkAction(
-        giveCardsAction,
-        true,
-      )
-
-      if (hasChosenPlayCard) {
-        // Can play a card
-        const cardId = items[0].id
-        const actionEndpoint = ''.concat(
-          '/',
-          this.game_name,
-          '/',
-          this.game_name.toString(),
-          '/',
-          playCardAction,
-          '.html',
-        )
-
-        this.ajaxcall(
-          actionEndpoint,
-          { id: cardId, lock: true },
-          this,
-          function (result) {},
-          function (isError) {},
-        )
-
-        this.playerHand.unselectAll()
-      } else if (hasChosenGiveCards) {
-        // Can give cards => let the player select some cards
-      } else {
-        this.playerHand.unselectAll()
-      }
-    }
+    this.stateSystem.states[stateName] ??
+      console.log('Missing state: ' + stateName)
   }
 }
