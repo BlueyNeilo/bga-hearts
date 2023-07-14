@@ -38,7 +38,9 @@ class NotificationSystem {
       ),
       new NotificationHandler('newScores', this.notif_newScores),
     ]
+  }
 
+  setup(): void {
     console.log('notifications subscriptions setup')
 
     this.handlers.forEach((handler) => {

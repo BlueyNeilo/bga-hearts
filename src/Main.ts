@@ -30,7 +30,8 @@ GameGui = /** @class */ (function () {
 class Main extends GameGui {
   private readonly cardwidth: number
   private readonly cardheight: number
-  private _notificationSystem: NotificationSystem
+  private readonly notificationSystem: NotificationSystem
+  private readonly stateSystem: StateSystem
   private playerId: number
   public playerHand: any // Stock
 
@@ -39,6 +40,9 @@ class Main extends GameGui {
     console.log('heartsblueinyellow constructor')
     this.cardwidth = 72
     this.cardheight = 96
+
+    this.notificationSystem = new NotificationSystem(this)
+    this.stateSystem = new StateSystem(this)
   }
 
   /**
@@ -94,7 +98,6 @@ class Main extends GameGui {
       this.playCardOnTable(playerId, color, value, card.id)
     }
 
-    console.log('connect to dojo')
     // Connect card selection with handler
     dojo.connect(
       this.playerHand,
@@ -103,7 +106,7 @@ class Main extends GameGui {
       'onPlayerHandSelectionChanged',
     )
 
-    this._notificationSystem = new NotificationSystem(this)
+    this.notificationSystem.setup()
 
     console.log('Ending game setup')
   }
@@ -118,20 +121,7 @@ class Main extends GameGui {
    */
   onEnteringState(stateName: string, args: { args: any }): void {
     console.log('Entering state: ' + stateName)
-
-    switch (stateName) {
-      /* Example:
-
-          case 'myGameState':
-
-              // Show some HTML block at this game state
-              dojo.style( 'my_html_block_id', 'display', 'block' );
-
-              break;
-        */
-      case 'dummmy':
-        break
-    }
+    this.stateSystem.states[stateName].onEnterState(args.args)
   }
 
   /**
@@ -142,50 +132,24 @@ class Main extends GameGui {
    */
   onLeavingState(stateName: string): void {
     console.log('Leaving state: ' + stateName)
-
-    switch (stateName) {
-      /* Example:
-
-          case 'myGameState':
-
-            // Hide the HTML block we are displaying only during this game state
-            dojo.style( 'my_html_block_id', 'display', 'none' );
-
-            break;
-        */
-
-      case 'dummmy':
-        break
-    }
+    this.stateSystem.states[stateName].onLeaveState()
   }
 
   /**
    * Manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
    *
    * @param {string} stateName New state to transition to
-   * @param {*} [_args] data passed from state transition
+   * @param {*} [args] data passed from state transition
    */
-  onUpdateActionButtons(stateName: string, _args: any[]): void {
-    console.log('onUpdateActionButtons: ' + stateName) /*
-      /*
-        TODO
-        if (this.isCurrentPlayerActive()) {
-          switch (stateName) {
-            /*
-              Example:
+  onUpdateActionButtons(stateName: string, args: any[]): void {
+    console.log('onUpdateActionButtons: ' + stateName)
 
-              case 'myGameState':
-
-                // Add 3 action buttons in the action status bar:
-
-                this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
-                this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
-                this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
-                break;
-            */ /*
-          }
-        }
-      */
+    if (this.isCurrentPlayerActive()) {
+      this.stateSystem.states[stateName].handleAction(args)
+    } else if (!this.isSpectator) {
+      // Multiplayer action
+      this.stateSystem.states[stateName].handleOutOfTurnAction(args)
+    }
   }
 
   /* Utility methods */

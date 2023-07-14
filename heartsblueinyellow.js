@@ -72,6 +72,8 @@ var Main = /** @class */ (function (_super) {
     console.log('heartsblueinyellow constructor');
     _this.cardwidth = 72;
     _this.cardheight = 96;
+    _this.notificationSystem = new NotificationSystem(_this);
+    _this.stateSystem = new StateSystem(_this);
     return _this;
   }
   /**
@@ -120,7 +122,6 @@ var Main = /** @class */ (function (_super) {
       var playerId = card.location_arg;
       this.playCardOnTable(playerId, color, value, card.id);
     }
-    console.log('connect to dojo');
     // Connect card selection with handler
     dojo.connect(
       this.playerHand,
@@ -128,7 +129,7 @@ var Main = /** @class */ (function (_super) {
       this,
       'onPlayerHandSelectionChanged'
     );
-    this._notificationSystem = new NotificationSystem(this);
+    this.notificationSystem.setup();
     console.log('Ending game setup');
   };
   /* Game & client states */
@@ -140,19 +141,7 @@ var Main = /** @class */ (function (_super) {
    */
   Main.prototype.onEnteringState = function (stateName, args) {
     console.log('Entering state: ' + stateName);
-    switch (stateName) {
-      /* Example:
-      
-                case 'myGameState':
-      
-                    // Show some HTML block at this game state
-                    dojo.style( 'my_html_block_id', 'display', 'block' );
-      
-                    break;
-              */
-      case 'dummmy':
-        break;
-    }
+    this.stateSystem.states[stateName].onEnterState(args.args);
   };
   /**
    * Called each time we are leaving a game state.
@@ -162,47 +151,22 @@ var Main = /** @class */ (function (_super) {
    */
   Main.prototype.onLeavingState = function (stateName) {
     console.log('Leaving state: ' + stateName);
-    switch (stateName) {
-      /* Example:
-      
-                case 'myGameState':
-      
-                  // Hide the HTML block we are displaying only during this game state
-                  dojo.style( 'my_html_block_id', 'display', 'none' );
-      
-                  break;
-              */
-      case 'dummmy':
-        break;
-    }
+    this.stateSystem.states[stateName].onLeaveState();
   };
   /**
    * Manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
    *
    * @param {string} stateName New state to transition to
-   * @param {*} [_args] data passed from state transition
+   * @param {*} [args] data passed from state transition
    */
-  Main.prototype.onUpdateActionButtons = function (stateName, _args) {
-    console.log('onUpdateActionButtons: ' + stateName); /*
-          /*
-            TODO
-            if (this.isCurrentPlayerActive()) {
-              switch (stateName) {
-                /*
-                  Example:
-    
-                  case 'myGameState':
-    
-                    // Add 3 action buttons in the action status bar:
-    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
-                    break;
-                */ /*
-      }
+  Main.prototype.onUpdateActionButtons = function (stateName, args) {
+    console.log('onUpdateActionButtons: ' + stateName);
+    if (this.isCurrentPlayerActive()) {
+      this.stateSystem.states[stateName].handleAction(args);
+    } else if (!this.isSpectator) {
+      // Multiplayer action
+      this.stateSystem.states[stateName].handleOutOfTurnAction(args);
     }
-  */
   };
   /* Utility methods */
   /**
@@ -310,7 +274,6 @@ var NotificationHandler = /** @class */ (function () {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var NotificationSystem = /** @class */ (function () {
   function NotificationSystem(main) {
-    var _this = this;
     this.notif_trickWin = this.notif_empty;
     this.main = main;
     this.handlers = [
@@ -323,6 +286,9 @@ var NotificationSystem = /** @class */ (function () {
       ),
       new NotificationHandler('newScores', this.notif_newScores)
     ];
+  }
+  NotificationSystem.prototype.setup = function () {
+    var _this = this;
     console.log('notifications subscriptions setup');
     this.handlers.forEach(function (handler) {
       dojo.subscribe(handler.name, handler.callback.bind(_this));
@@ -330,7 +296,7 @@ var NotificationSystem = /** @class */ (function () {
         _this.main.notifqueue.setSynchronous(handler.name, handler.syncTimer);
       }
     });
-  }
+  };
   NotificationSystem.prototype.notif_newHand = function (notif) {
     // We received a received a new full hand of 13 cards.
     this.main.playerHand.removeAll();
@@ -379,4 +345,44 @@ var NotificationSystem = /** @class */ (function () {
     }
   };
   return NotificationSystem;
+})();
+var State = /** @class */ (function () {
+  function State(
+    name,
+    onEnterState,
+    onLeaveState,
+    handleAction,
+    handleOutOfTurnAction
+  ) {
+    if (onEnterState === void 0) {
+      onEnterState = function () {};
+    }
+    if (onLeaveState === void 0) {
+      onLeaveState = function () {};
+    }
+    if (handleAction === void 0) {
+      handleAction = function () {};
+    }
+    if (handleOutOfTurnAction === void 0) {
+      handleOutOfTurnAction = function () {};
+    }
+    this.name = name;
+    this.onEnterState = onEnterState;
+    this.onLeaveState = onLeaveState;
+    this.handleAction = handleAction;
+    this.handleOutOfTurnAction = handleOutOfTurnAction;
+  }
+  return State;
+})();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+var StateSystem = /** @class */ (function () {
+  function StateSystem(main) {
+    this.main = main;
+    this.states = Object.fromEntries(
+      [new State('dummy')].map(function (state) {
+        return [state.name, state];
+      })
+    );
+  }
+  return StateSystem;
 })();
