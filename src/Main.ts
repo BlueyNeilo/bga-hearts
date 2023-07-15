@@ -15,7 +15,7 @@
  *
  */
 
-/* @ts-expect-error eslint-disable-next-line no-undef Typescript workaround for unrecognised class extension */
+/* @ts-expect-error Typescript workaround for unrecognised class extension */
 // eslint-disable-next-line no-undef
 GameGui = /** @class */ (function () {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
