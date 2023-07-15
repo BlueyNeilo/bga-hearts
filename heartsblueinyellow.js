@@ -104,6 +104,7 @@ var Main = /** @class */ (function (_super) {
    */
   Main.prototype.setup = function (_gamedatas) {
     console.log('Starting game setup');
+    dojo.destroy('debug_output');
     this.playerId = +this.player_id;
     this.gameName = this.game_name;
     this.playerHand.setup();
