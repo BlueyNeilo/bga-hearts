@@ -24,6 +24,10 @@ namespace Util {
         function (isError) {},
       )
     }
+
+    export function checkAction(main: Main, action: string): boolean {
+      return main.checkAction(action, true)
+    }
   }
 
   // eslint-disable-next-line
@@ -32,19 +36,16 @@ namespace Util {
      * Play card on the table for any player
      *
      * @param {Main} main - main game program
-     * @param {number} playerId - player direction (N,S,W,E)
-     * @param {number} color - suit of card
-     * @param {number} value - value of card
-     * @param {number} cardId - card id
+     * @param {Card} card - card to play
      */
-    export function playCardOnTable(
-      main: Main,
-      playerId: number,
-      color: number,
-      value: number,
-      cardId: number,
-    ): void {
-      // playerId => direction
+    export function playCardOnTable(main: Main, card: Card): void {
+      const {
+        id: cardId,
+        location_arg: playerId,
+        type: color,
+        type_arg: value,
+      } = { ...card, type: +card.type }
+
       const cardOnTablePlayerId = 'cardontable_' + playerId.toString()
       const overallPlayerBoardPlayerId =
         'overall_player_board_' + playerId.toString()
@@ -62,7 +63,7 @@ namespace Util {
       )
 
       // Move card from player panel or from hand
-      if (+playerId !== +main.playerId) {
+      if (playerId !== main.playerId) {
         // Move card from opponent player panel
         main.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId)
       } else {
@@ -75,6 +76,33 @@ namespace Util {
 
       // In any case: move it to its final destination
       main.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play()
+    }
+
+    /**
+     * Give table cards to trick winner
+     *
+     * @param {Main} main - main game program
+     * @param {Card} winnerId - playerId of trick winner
+     */
+    export function giveTableCardsToTrickWinner(
+      main: Main,
+      winnerId: number,
+    ): void {
+      const overallPlayerBoardWinnerId =
+        'overall_player_board_' + winnerId.toString()
+
+      for (const playerId in main.gamedatas.players) {
+        const cardOnTablePlayerId = 'cardontable_' + playerId
+        const anim = main.slideToObject(
+          cardOnTablePlayerId,
+          overallPlayerBoardWinnerId,
+        )
+
+        dojo.connect(anim, 'onEnd', function (node) {
+          dojo.destroy(node)
+        })
+        anim.play()
+      }
     }
   }
 }

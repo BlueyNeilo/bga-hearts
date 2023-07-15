@@ -43,7 +43,7 @@ class Main extends GameGui {
     this.cardwidth = 72
     this.cardheight = 96
 
-    this.playerHand = new PlayerHand(this, new ebg.stock())
+    this.playerHand = new PlayerHand(this)
     this.notificationSystem = new NotificationSystem(this)
     this.stateSystem = new StateSystem(this)
   }
@@ -61,7 +61,7 @@ class Main extends GameGui {
   setup(_gamedatas: any): void {
     console.log('Starting game setup')
 
-    this.playerId = this.player_id
+    this.playerId = +this.player_id
     this.gameName = this.game_name
 
     this.playerHand.setup()
@@ -73,14 +73,9 @@ class Main extends GameGui {
 
   /* Cards played on table */
   setupTableCards(): void {
-    for (const i in this.gamedatas.cardsontable) {
-      const card = this.gamedatas.cardsontable[i]
-      const color = card.type
-      const value = card.type_arg
-      const playerId = card.location_arg
-
-      Util.Display.playCardOnTable(this, playerId, color, value, card.id)
-    }
+    Object.values(this.gamedatas.cardsontable).forEach((card: Card) => {
+      Util.Display.playCardOnTable(this, card)
+    })
   }
 
   /* Game & client states */

@@ -53,6 +53,7 @@ overrides:
       no-void: off
       no-unused-expressions: off
       no-unused-vars: off
+      one-var: off
       # Ignore dojo weirdness
       no-proto: off
       no-undef: off

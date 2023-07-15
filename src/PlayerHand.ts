@@ -1,15 +1,20 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class PlayerHand {
-  private readonly stock: any
   private readonly main: Main
+  private readonly stock: any
 
-  constructor(main: Main, stock: any) {
+  constructor(main: Main) {
     this.main = main
-    this.stock = stock
+    this.stock = new ebg.stock()
   }
 
   setup(): void {
-    // Player hand
+    this.setupStock()
+    this.constructHand(this.main.gamedatas.hand)
+    dojo.connect(this.stock, 'onChangeSelection', this, 'onSelectionChanged')
+  }
+
+  private setupStock(): void {
     this.stock.create(
       this.main,
       $('myhand'),
@@ -19,7 +24,10 @@ class PlayerHand {
 
     this.stock.image_items_per_row = 13
 
-    // Create cards types
+    this.createCardTypes()
+  }
+
+  private createCardTypes(): void {
     for (let color = 1; color <= 4; color++) {
       for (let value = 2; value <= 14; value++) {
         // Build card type id
@@ -32,38 +40,27 @@ class PlayerHand {
         )
       }
     }
-
-    // Cards in player's hand
-    this.constructHand(this.main.gamedatas.hand)
-
-    // Connect card selection with handler
-    dojo.connect(
-      this.stock,
-      'onChangeSelection',
-      this,
-      'onPlayerHandSelectionChanged',
-    )
   }
 
   /* Player's action */
-  private onPlayerHandSelectionChanged(): void {
-    const items = this.stock.getSelectedItems()
+  private onSelectionChanged(): void {
+    const selectedItems = this.stock.getSelectedItems()
     const playCardAction: string = 'playCard'
     const giveCardsAction: string = 'giveCards'
 
-    if (items.length > 0) {
-      const hasChosenPlayCard: boolean = this.main.checkAction(
+    if (selectedItems.length > 0) {
+      const hasChosenPlayCard: boolean = Util.Ajax.checkAction(
+        this.main,
         playCardAction,
-        true,
       )
-      const hasChosenGiveCards: boolean = this.main.checkAction(
+      const hasChosenGiveCards: boolean = Util.Ajax.checkAction(
+        this.main,
         giveCardsAction,
-        true,
       )
 
       if (hasChosenPlayCard) {
         // Can play a card
-        const cardId = items[0].id
+        const cardId = selectedItems[0].id
         Util.Ajax.sendAction(this.main, playCardAction, { id: cardId })
         this.stock.unselectAll()
       } else if (hasChosenGiveCards) {
@@ -85,15 +82,14 @@ class PlayerHand {
     return (color - 1) * 13 + (value - 2)
   }
 
-  constructHand(cards: any): void {
-    for (const i in cards) {
-      const card = cards[i]
-      const color = card.type
+  constructHand(cards: Record<number, Card>): void {
+    Object.values(cards).forEach((card) => {
+      const color = +card.type
       const value = card.type_arg
 
       const cardId = this.getCardUniqueId(color, value)
       this.stock.addToStockWithId(cardId, card.id)
-    }
+    })
   }
 
   removeCard(cardId: number): void {

@@ -87,7 +87,7 @@ var Main = /** @class */ (function (_super) {
     console.log('heartsblueinyellow constructor');
     _this.cardwidth = 72;
     _this.cardheight = 96;
-    _this.playerHand = new PlayerHand(_this, new ebg.stock());
+    _this.playerHand = new PlayerHand(_this);
     _this.notificationSystem = new NotificationSystem(_this);
     _this.stateSystem = new StateSystem(_this);
     return _this;
@@ -104,7 +104,7 @@ var Main = /** @class */ (function (_super) {
    */
   Main.prototype.setup = function (_gamedatas) {
     console.log('Starting game setup');
-    this.playerId = this.player_id;
+    this.playerId = +this.player_id;
     this.gameName = this.game_name;
     this.playerHand.setup();
     this.setupTableCards();
@@ -113,13 +113,10 @@ var Main = /** @class */ (function (_super) {
   };
   /* Cards played on table */
   Main.prototype.setupTableCards = function () {
-    for (var i in this.gamedatas.cardsontable) {
-      var card = this.gamedatas.cardsontable[i];
-      var color = card.type;
-      var value = card.type_arg;
-      var playerId = card.location_arg;
-      Util.Display.playCardOnTable(this, playerId, color, value, card.id);
-    }
+    var _this = this;
+    Object.values(this.gamedatas.cardsontable).forEach(function (card) {
+      Util.Display.playCardOnTable(_this, card);
+    });
   };
   /* Game & client states */
   /**
@@ -228,50 +225,40 @@ var NotificationSystem = /** @class */ (function () {
     this.main.playerHand.constructHand(notif.args.cards);
   };
   NotificationSystem.prototype.notif_playCard = function (notif) {
-    Util.Display.playCardOnTable(
-      this.main,
-      notif.args.playerId,
-      notif.args.color,
-      notif.args.value,
-      notif.args.cardId
-    );
+    var card = {
+      id: +notif.args.cardId,
+      location: 'unknown',
+      location_arg: +notif.args.playerId,
+      type: notif.args.color,
+      type_arg: +notif.args.value
+    };
+    Util.Display.playCardOnTable(this.main, card);
   };
   NotificationSystem.prototype.notif_empty = function (notif) {
     /* No code */
   };
   NotificationSystem.prototype.notif_giveAllCardsToPlayer = function (notif) {
-    var winnerId = notif.args.playerId;
-    var overallPlayerBoardWinnerId =
-      'overall_player_board_' + winnerId.toString();
-    for (var playerId in this.main.gamedatas.players) {
-      var cardOnTablePlayerId = 'cardontable_' + playerId;
-      var anim = this.main.slideToObject(
-        cardOnTablePlayerId,
-        overallPlayerBoardWinnerId
-      );
-      dojo.connect(anim, 'onEnd', function (node) {
-        console.log('triggered');
-        dojo.destroy(node);
-      });
-      anim.play();
-    }
+    Util.Display.giveTableCardsToTrickWinner(this.main, notif.args.playerId);
   };
   NotificationSystem.prototype.notif_newScores = function (notif) {
     for (var playerId in notif.args.newScores) {
       this.main.scoreCtrl[playerId].toValue(notif.args.newScores[playerId]);
-      console.log(this.main.scoreCtrl);
     }
   };
   return NotificationSystem;
 })();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var PlayerHand = /** @class */ (function () {
-  function PlayerHand(main, stock) {
+  function PlayerHand(main) {
     this.main = main;
-    this.stock = stock;
+    this.stock = new ebg.stock();
   }
   PlayerHand.prototype.setup = function () {
-    // Player hand
+    this.setupStock();
+    this.constructHand(this.main.gamedatas.hand);
+    dojo.connect(this.stock, 'onChangeSelection', this, 'onSelectionChanged');
+  };
+  PlayerHand.prototype.setupStock = function () {
     this.stock.create(
       this.main,
       $('myhand'),
@@ -279,7 +266,9 @@ var PlayerHand = /** @class */ (function () {
       this.main.cardheight
     );
     this.stock.image_items_per_row = 13;
-    // Create cards types
+    this.createCardTypes();
+  };
+  PlayerHand.prototype.createCardTypes = function () {
     for (var color = 1; color <= 4; color++) {
       for (var value = 2; value <= 14; value++) {
         // Build card type id
@@ -292,27 +281,21 @@ var PlayerHand = /** @class */ (function () {
         );
       }
     }
-    // Cards in player's hand
-    this.constructHand(this.main.gamedatas.hand);
-    // Connect card selection with handler
-    dojo.connect(
-      this.stock,
-      'onChangeSelection',
-      this,
-      'onPlayerHandSelectionChanged'
-    );
   };
   /* Player's action */
-  PlayerHand.prototype.onPlayerHandSelectionChanged = function () {
-    var items = this.stock.getSelectedItems();
+  PlayerHand.prototype.onSelectionChanged = function () {
+    var selectedItems = this.stock.getSelectedItems();
     var playCardAction = 'playCard';
     var giveCardsAction = 'giveCards';
-    if (items.length > 0) {
-      var hasChosenPlayCard = this.main.checkAction(playCardAction, true);
-      var hasChosenGiveCards = this.main.checkAction(giveCardsAction, true);
+    if (selectedItems.length > 0) {
+      var hasChosenPlayCard = Util.Ajax.checkAction(this.main, playCardAction);
+      var hasChosenGiveCards = Util.Ajax.checkAction(
+        this.main,
+        giveCardsAction
+      );
       if (hasChosenPlayCard) {
         // Can play a card
-        var cardId = items[0].id;
+        var cardId = selectedItems[0].id;
         Util.Ajax.sendAction(this.main, playCardAction, { id: cardId });
         this.stock.unselectAll();
       } else if (hasChosenGiveCards) {
@@ -333,13 +316,13 @@ var PlayerHand = /** @class */ (function () {
     return (color - 1) * 13 + (value - 2);
   };
   PlayerHand.prototype.constructHand = function (cards) {
-    for (var i in cards) {
-      var card = cards[i];
-      var color = card.type;
+    var _this = this;
+    Object.values(cards).forEach(function (card) {
+      var color = +card.type;
       var value = card.type_arg;
-      var cardId = this.getCardUniqueId(color, value);
-      this.stock.addToStockWithId(cardId, card.id);
-    }
+      var cardId = _this.getCardUniqueId(color, value);
+      _this.stock.addToStockWithId(cardId, card.id);
+    });
   };
   PlayerHand.prototype.removeCard = function (cardId) {
     this.stock.removeFromStockById(cardId);
@@ -377,12 +360,19 @@ var State = /** @class */ (function () {
   }
   return State;
 })();
+/**
+ * Handle game states and their transitions
+ */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var StateSystem = /** @class */ (function () {
   function StateSystem(main) {
     this.main = main;
     this.states = Object.fromEntries(
-      [new State('dummy')].map(function (state) {
+      [
+        new State('playerTurn'),
+        new State('nextPlayer'),
+        new State('newTrick')
+      ].map(function (state) {
         return [state.name, state];
       })
     );
@@ -417,6 +407,10 @@ var Util;
       );
     }
     Ajax.sendAction = sendAction;
+    function checkAction(main, action) {
+      return main.checkAction(action, true);
+    }
+    Ajax.checkAction = checkAction;
   })((Ajax = Util.Ajax || (Util.Ajax = {})));
   // eslint-disable-next-line
   var Display;
@@ -425,13 +419,14 @@ var Util;
      * Play card on the table for any player
      *
      * @param {Main} main - main game program
-     * @param {number} playerId - player direction (N,S,W,E)
-     * @param {number} color - suit of card
-     * @param {number} value - value of card
-     * @param {number} cardId - card id
+     * @param {Card} card - card to play
      */
-    function playCardOnTable(main, playerId, color, value, cardId) {
-      // playerId => direction
+    function playCardOnTable(main, card) {
+      var _a = __assign(__assign({}, card), { type: +card.type }),
+        cardId = _a.id,
+        playerId = _a.location_arg,
+        color = _a.type,
+        value = _a.type_arg;
       var cardOnTablePlayerId = 'cardontable_' + playerId.toString();
       var overallPlayerBoardPlayerId =
         'overall_player_board_' + playerId.toString();
@@ -447,7 +442,7 @@ var Util;
         playerTableCardPlayerId
       );
       // Move card from player panel or from hand
-      if (+playerId !== +main.playerId) {
+      if (playerId !== main.playerId) {
         // Move card from opponent player panel
         main.placeOnObject(cardOnTablePlayerId, overallPlayerBoardPlayerId);
       } else {
@@ -461,5 +456,27 @@ var Util;
       main.slideToObject(cardOnTablePlayerId, playerTableCardPlayerId).play();
     }
     Display.playCardOnTable = playCardOnTable;
+    /**
+     * Give table cards to trick winner
+     *
+     * @param {Main} main - main game program
+     * @param {Card} winnerId - playerId of trick winner
+     */
+    function giveTableCardsToTrickWinner(main, winnerId) {
+      var overallPlayerBoardWinnerId =
+        'overall_player_board_' + winnerId.toString();
+      for (var playerId in main.gamedatas.players) {
+        var cardOnTablePlayerId = 'cardontable_' + playerId;
+        var anim = main.slideToObject(
+          cardOnTablePlayerId,
+          overallPlayerBoardWinnerId
+        );
+        dojo.connect(anim, 'onEnd', function (node) {
+          dojo.destroy(node);
+        });
+        anim.play();
+      }
+    }
+    Display.giveTableCardsToTrickWinner = giveTableCardsToTrickWinner;
   })((Display = Util.Display || (Util.Display = {})));
 })(Util || (Util = {}));

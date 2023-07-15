@@ -20,6 +20,9 @@ class State {
   }
 }
 
+/**
+ * Handle game states and their transitions
+ */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class StateSystem {
   private readonly main: Main
@@ -28,7 +31,11 @@ class StateSystem {
   constructor(main: Main) {
     this.main = main
     this.states = Object.fromEntries(
-      [new State('dummy')].map((state) => [state.name, state]),
+      [
+        new State('playerTurn'),
+        new State('nextPlayer'),
+        new State('newTrick'),
+      ].map((state) => [state.name, state]),
     )
   }
 }

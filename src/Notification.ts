@@ -58,13 +58,14 @@ class NotificationSystem {
   }
 
   notif_playCard(notif: Notif): void {
-    Util.Display.playCardOnTable(
-      this.main,
-      notif.args.playerId,
-      notif.args.color,
-      notif.args.value,
-      notif.args.cardId,
-    )
+    const card: Card = {
+      id: +notif.args.cardId,
+      location: 'unknown',
+      location_arg: +notif.args.playerId,
+      type: notif.args.color,
+      type_arg: +notif.args.value,
+    }
+    Util.Display.playCardOnTable(this.main, card)
   }
 
   notif_trickWin = this.notif_empty
@@ -74,29 +75,12 @@ class NotificationSystem {
   }
 
   notif_giveAllCardsToPlayer(notif: Notif): void {
-    const winnerId: number = notif.args.playerId
-    const overallPlayerBoardWinnerId =
-      'overall_player_board_' + winnerId.toString()
-
-    for (const playerId in this.main.gamedatas.players) {
-      const cardOnTablePlayerId = 'cardontable_' + playerId
-      const anim = this.main.slideToObject(
-        cardOnTablePlayerId,
-        overallPlayerBoardWinnerId,
-      )
-
-      dojo.connect(anim, 'onEnd', function (node) {
-        console.log('triggered')
-        dojo.destroy(node)
-      })
-      anim.play()
-    }
+    Util.Display.giveTableCardsToTrickWinner(this.main, notif.args.playerId)
   }
 
   notif_newScores(notif: Notif): void {
     for (const playerId in notif.args.newScores) {
       this.main.scoreCtrl[playerId].toValue(notif.args.newScores[playerId])
-      console.log(this.main.scoreCtrl)
     }
   }
 }
