@@ -29,14 +29,29 @@ class NotificationSystem {
     this.main = main
 
     this.handlers = [
-      new NotificationHandler('newHand', this.notif_newHand),
-      new NotificationHandler('playCard', this.notif_playCard),
-      new NotificationHandler('trickWin', this.notif_trickWin, 1000),
-      new NotificationHandler(
-        'giveAllCardsToPlayer',
-        this.notif_giveAllCardsToPlayer,
-      ),
-      new NotificationHandler('newScores', this.notif_newScores),
+      new NotificationHandler('newHand', (notif: Notif) => {
+        main.playerHand.removeAll()
+        main.playerHand.constructHand(notif.args.cards)
+      }),
+      new NotificationHandler('playCard', (notif: Notif) => {
+        const card: Card = {
+          id: +notif.args.cardId,
+          location: 'unknown',
+          location_arg: +notif.args.playerId,
+          type: notif.args.color,
+          type_arg: +notif.args.value,
+        }
+        Util.Display.playCardOnTable(main, card)
+      }),
+      new NotificationHandler('trickWin', () => {}, 1000),
+      new NotificationHandler('giveAllCardsToPlayer', (notif: Notif) => {
+        Util.Display.giveTableCardsToTrickWinner(main, notif.args.playerId)
+      }),
+      new NotificationHandler('newScores', (notif: Notif) => {
+        for (const playerId in notif.args.newScores) {
+          main.scoreCtrl[playerId].toValue(notif.args.newScores[playerId])
+        }
+      }),
     ]
   }
 
@@ -49,38 +64,5 @@ class NotificationSystem {
         this.main.notifqueue.setSynchronous(handler.name, handler.syncTimer)
       }
     })
-  }
-
-  notif_newHand(notif: Notif): void {
-    // We received a received a new full hand of 13 cards.
-    this.main.playerHand.removeAll()
-    this.main.playerHand.constructHand(notif.args.cards)
-  }
-
-  notif_playCard(notif: Notif): void {
-    const card: Card = {
-      id: +notif.args.cardId,
-      location: 'unknown',
-      location_arg: +notif.args.playerId,
-      type: notif.args.color,
-      type_arg: +notif.args.value,
-    }
-    Util.Display.playCardOnTable(this.main, card)
-  }
-
-  notif_trickWin = this.notif_empty
-
-  notif_empty(notif: Notif): void {
-    /* No code */
-  }
-
-  notif_giveAllCardsToPlayer(notif: Notif): void {
-    Util.Display.giveTableCardsToTrickWinner(this.main, notif.args.playerId)
-  }
-
-  notif_newScores(notif: Notif): void {
-    for (const playerId in notif.args.newScores) {
-      this.main.scoreCtrl[playerId].toValue(notif.args.newScores[playerId])
-    }
   }
 }

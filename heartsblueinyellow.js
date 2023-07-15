@@ -196,17 +196,31 @@ var NotificationHandler = /** @class */ (function () {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var NotificationSystem = /** @class */ (function () {
   function NotificationSystem(main) {
-    this.notif_trickWin = this.notif_empty;
     this.main = main;
     this.handlers = [
-      new NotificationHandler('newHand', this.notif_newHand),
-      new NotificationHandler('playCard', this.notif_playCard),
-      new NotificationHandler('trickWin', this.notif_trickWin, 1000),
-      new NotificationHandler(
-        'giveAllCardsToPlayer',
-        this.notif_giveAllCardsToPlayer
-      ),
-      new NotificationHandler('newScores', this.notif_newScores)
+      new NotificationHandler('newHand', function (notif) {
+        main.playerHand.removeAll();
+        main.playerHand.constructHand(notif.args.cards);
+      }),
+      new NotificationHandler('playCard', function (notif) {
+        var card = {
+          id: +notif.args.cardId,
+          location: 'unknown',
+          location_arg: +notif.args.playerId,
+          type: notif.args.color,
+          type_arg: +notif.args.value
+        };
+        Util.Display.playCardOnTable(main, card);
+      }),
+      new NotificationHandler('trickWin', function () {}, 1000),
+      new NotificationHandler('giveAllCardsToPlayer', function (notif) {
+        Util.Display.giveTableCardsToTrickWinner(main, notif.args.playerId);
+      }),
+      new NotificationHandler('newScores', function (notif) {
+        for (var playerId in notif.args.newScores) {
+          main.scoreCtrl[playerId].toValue(notif.args.newScores[playerId]);
+        }
+      })
     ];
   }
   NotificationSystem.prototype.setup = function () {
@@ -218,32 +232,6 @@ var NotificationSystem = /** @class */ (function () {
         _this.main.notifqueue.setSynchronous(handler.name, handler.syncTimer);
       }
     });
-  };
-  NotificationSystem.prototype.notif_newHand = function (notif) {
-    // We received a received a new full hand of 13 cards.
-    this.main.playerHand.removeAll();
-    this.main.playerHand.constructHand(notif.args.cards);
-  };
-  NotificationSystem.prototype.notif_playCard = function (notif) {
-    var card = {
-      id: +notif.args.cardId,
-      location: 'unknown',
-      location_arg: +notif.args.playerId,
-      type: notif.args.color,
-      type_arg: +notif.args.value
-    };
-    Util.Display.playCardOnTable(this.main, card);
-  };
-  NotificationSystem.prototype.notif_empty = function (notif) {
-    /* No code */
-  };
-  NotificationSystem.prototype.notif_giveAllCardsToPlayer = function (notif) {
-    Util.Display.giveTableCardsToTrickWinner(this.main, notif.args.playerId);
-  };
-  NotificationSystem.prototype.notif_newScores = function (notif) {
-    for (var playerId in notif.args.newScores) {
-      this.main.scoreCtrl[playerId].toValue(notif.args.newScores[playerId]);
-    }
   };
   return NotificationSystem;
 })();
