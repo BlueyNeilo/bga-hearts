@@ -16,9 +16,23 @@
   *
   */
 
+$swdNamespaceAutoload = function ($class) {
+	$classParts = explode('\\', $class);
+	if ($classParts[0] == 'Hearts') {
+		array_shift($classParts);
+		$file = dirname(__FILE__) . '/modules/server/Hearts/' . implode(DIRECTORY_SEPARATOR, $classParts) . '.php';
+		if (file_exists($file)) {
+			require_once $file;
+		} else {
+			var_dump('Cannot find file : ' . $file);
+		}
+	}
+};
+spl_autoload_register($swdNamespaceAutoload, true, true);
 
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
+use Hearts\ScoringHelper;
 
 class HeartsBlueInYellow extends Table
 {
@@ -322,23 +336,10 @@ class HeartsBlueInYellow extends Table
         if ($this->cards->countCardInLocation('cardsontable') == 4) {
             // This is the end of the trick
             // Move all cards to "cardswon" of the given player
-            $bestValue = 0;
-            $bestValuePlayerId = null;
             $currentTrickColor = self::getGameStateValue('trickColor');
             $cardsOnTable = $this->cards->getCardsInLocation('cardsontable');
 
-            foreach ($cardsOnTable as $card) {
-                $cardColor = $card ['type'];
-                $cardValue = $card ['type_arg'];
-                $cardPlayerId = $card ['location_arg'];
-
-                if ($cardColor == $currentTrickColor) {
-                    if ($bestValuePlayerId === null || $cardValue > $bestValue) {
-                        $bestValuePlayerId = $cardPlayerId;
-                        $bestValue = $cardValue;
-                    }
-                }
-            }
+            $bestValuePlayerId = ScoringHelper::calculateTrickWinner($cardsOnTable, $currentTrickColor);
 
             // Trick winner starts next trick
             $this->gamestate->changeActivePlayer($bestValuePlayerId);
