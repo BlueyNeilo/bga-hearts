@@ -4,6 +4,28 @@ Game adapation on [Board Game Arena](https://boardgamearena.com/) following [BGA
 
 Completed tutorial reference found at [elaskavaia/bga-heartsla](https://github.com/elaskavaia/bga-heartsla)
 
+# Setup
+
+Frontend
+
+`npm install`
+
+Php
+
+`composer update`
+
+Database
+
+`docker run mysql:5.7`
+
+## Watching code
+
+`npm run watch`
+
+## Running tests
+
+`composer test`
+
 ## Other additions
 
 Dev experience

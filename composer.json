@@ -1,0 +1,28 @@
+{
+  "name": "blueinyellow/bga-hearts",
+  "type": "project",
+  "description": "Hearts - BoardGameArena implementation",
+  "minimum-stability": "stable",
+  "license": "BGA Licence",
+  "authors": [
+    {
+      "name": "Patrick Neilson",
+      "email": "patrick.neilson.tech@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Hearts\\": "modules/server/Hearts"
+    }
+  },
+  "require": {
+    "php": ">=7.4 <8"
+  },
+  "require-dev": {
+    "phpunit/phpunit": ">=9 <10"
+  },
+  "scripts": {
+    "generate": "php modules/server/Hearts/Util/generate_state_diagram.php > misc/state-machine.dot && dot -Tpng -o misc/state-machine.png misc/state-machine.dot",
+    "test": "phpunit misc/tests"
+  }
+}
