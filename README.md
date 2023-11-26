@@ -16,7 +16,11 @@ Php
 
 Database
 
-`docker run mysql:5.7`
+`composer startdb`
+
+`composer logindb`
+
+`composer stopdb`
 
 ## Watching code
 
@@ -31,10 +35,10 @@ Database
 Dev experience
 
 - [x] eslint formatting
-- [x] intelliphense PHP formatting
+- [x] intelephense PHP formatting
 - [x] remove example comment code
 - [x] typescript implementation
-- [ ] Automated unit tests
+- [x] Automated unit tests
 - [x] Add state transition diagram
 - [ ] Refactor _.ts _.game.php into files under modules or src folder
 

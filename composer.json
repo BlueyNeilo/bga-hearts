@@ -10,19 +10,19 @@
       "email": "patrick.neilson.tech@gmail.com"
     }
   ],
-  "autoload": {
-    "psr-4": {
-      "Hearts\\": "modules/server/Hearts"
-    }
-  },
   "require": {
     "php": ">=7.4 <8"
   },
   "require-dev": {
-    "phpunit/phpunit": ">=9 <10"
+    "phpunit/phpunit": ">=9 <10",
+    "doctrine/dbal": "^2.5.12",
+    "ext-pdo_mysql": "*"
   },
   "scripts": {
     "generate": "php modules/server/Hearts/Util/generate_state_diagram.php > misc/state-machine.dot && dot -Tpng -o misc/state-machine.png misc/state-machine.dot",
-    "test": "phpunit misc/tests"
+    "test": "phpunit misc/tests",
+    "startdb": "docker run -d --name heartsdb -e MYSQL_ROOT_PASSWORD=testdb -e MYSQL_DATABASE=hearts -p 3306:3306 -v $(pwd):/home mysql:5.7",
+    "logindb": "docker exec -it heartsdb /bin/bash -c \"mysql -u'root' -p'testdb' hearts\"",
+    "stopdb": "docker stop heartsdb && docker rm heartsdb"
   }
 }
