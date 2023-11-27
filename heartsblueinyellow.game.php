@@ -1,36 +1,36 @@
 <?php
- /**
-  *------
-  * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
-  * HeartsBlueInYellow implementation : © Patrick Neilson <patrick.neilson.tech@gmail.com>
-  *
-  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
-  * See http://en.boardgamearena.com/#!doc/Studio for more information.
-  * -----
-  *
-  * heartsblueinyellow.game.php
-  *
-  * This is the main file for your game logic.
-  *
-  * In this PHP file, you are going to defines the rules of the game.
-  *
-  */
+/**
+ *------
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
+ * HeartsBlueInYellow implementation : © Patrick Neilson <patrick.neilson.tech@gmail.com>
+ *
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
+ * -----
+ *
+ * heartsblueinyellow.game.php
+ *
+ * This is the main file for your game logic.
+ *
+ * In this PHP file, you are going to defines the rules of the game.
+ *
+ */
 
 $swdNamespaceAutoload = function ($class) {
-	$classParts = explode('\\', $class);
-	if ($classParts[0] == 'Hearts') {
-		array_shift($classParts);
-		$file = dirname(__FILE__) . '/modules/server/Hearts/' . implode(DIRECTORY_SEPARATOR, $classParts) . '.php';
-		if (file_exists($file)) {
-			require_once $file;
-		} else {
-			var_dump('Cannot find file : ' . $file);
-		}
-	}
+    $classParts = explode('\\', $class);
+    if ($classParts[0] == 'Hearts') {
+        array_shift($classParts);
+        $file = dirname(__FILE__) . '/modules/server/Hearts/' . implode(DIRECTORY_SEPARATOR, $classParts) . '.php';
+        if (file_exists($file)) {
+            require_once $file;
+        } else {
+            var_dump('Cannot find file : ' . $file);
+        }
+    }
 };
 spl_autoload_register($swdNamespaceAutoload, true, true);
 
-require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
+require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 
 use Hearts\ScoringHelper;
 
@@ -40,8 +40,8 @@ class HeartsBlueInYellow extends Table
     public array $colors;
     public array $values_label;
 
-	function __construct( )
-	{
+    function __construct()
+    {
         // Your global variables labels:
         //  Here, you can assign labels to global variables you are using for this game.
         //  You can use any number of global variables with IDs between 10 and 99.
@@ -49,19 +49,21 @@ class HeartsBlueInYellow extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
-        self::initGameStateLabels( array(
-            "currentHandType" => 10,
-            "trickColor" => 11,
-            "alreadyPlayedHearts" => 12,
-        ));
+        self::initGameStateLabels(
+            array(
+                "currentHandType" => 10,
+                "trickColor" => 11,
+                "alreadyPlayedHearts" => 12,
+            )
+        );
 
         $this->cards = self::getNew("module.common.deck");
         $this->cards->init("card");
-	}
+    }
 
-    protected function getGameName( )
+    protected function getGameName()
     {
-		// Used for translations and stuff. Please do not modify.
+        // Used for translations and stuff. Please do not modify.
         return "heartsblueinyellow";
     }
 
@@ -72,26 +74,25 @@ class HeartsBlueInYellow extends Table
         In this method, you must setup the game according to the game rules, so that
         the game is ready to be played.
     */
-    protected function setupNewGame( $players, $options = array() )
+    protected function setupNewGame($players, $options = array())
     {
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
         $gameinfos = self::getGameinfos();
-        $default_colors = $gameinfos['player_colors'];
+        $default_colors = (array)$gameinfos['player_colors'];
 
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
         $values = array();
-        foreach( $players as $player_id => $player )
-        {
-            $color = array_shift( $default_colors );
-            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
+        foreach ($players as $player_id => $player) {
+            $color = array_shift($default_colors);
+            $values[] = "('" . $player_id . "','$color','" . $player['player_canal'] . "','" . addslashes($player['player_name']) . "','" . addslashes($player['player_avatar']) . "')";
         }
-        $sql .= implode( ",", $values );
-        self::DbQuery( $sql );
-        self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
+        $sql .= implode(",", $values);
+        self::DbQuery($sql);
+        self::reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
         self::reloadPlayersBasicInfos();
 
         /************ Start the game initialization *****/
@@ -111,12 +112,12 @@ class HeartsBlueInYellow extends Table
         self::setGameStateInitialValue('alreadyPlayedHearts', 0);
 
         // Create cards
-        $cards = array ();
+        $cards = array();
         // spade, heart, diamond, club
-        foreach ( $this->colors as $colorId => $color) {
+        foreach ($this->colors as $colorId => $color) {
             //  2, 3, 4, ... K, A
-            for ($value = 2; $value <= 14; $value ++) {
-                $cards [] = array ('type' => $colorId, 'type_arg' => $value, 'nbr' => 1);
+            for ($value = 2; $value <= 14; $value++) {
+                $cards[] = array('type' => $colorId, 'type_arg' => $value, 'nbr' => 1);
             }
         }
 
@@ -146,7 +147,7 @@ class HeartsBlueInYellow extends Table
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score FROM player ";
-        $result['players'] = self::getCollectionFromDb( $sql );
+        $result['players'] = self::getCollectionFromDb($sql);
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
         // Cards in player hand
@@ -176,7 +177,7 @@ class HeartsBlueInYellow extends Table
     }
 
 
-//////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
 //////////// Utility functions
 ////////////
 
@@ -186,9 +187,9 @@ class HeartsBlueInYellow extends Table
 
 
 
-//////////////////////////////////////////////////////////////////////////////
-//////////// Player actions
-////////////
+    //////////////////////////////////////////////////////////////////////////////
+    //////////// Player actions
+    ////////////
 
     /*
         Each time a player is doing some game action, one of the methods below is called.
@@ -221,14 +222,15 @@ class HeartsBlueInYellow extends Table
 
     */
 
-    function playCard($cardId) {
+    function playCard($cardId)
+    {
         self::checkAction("playCard");
         $playerId = self::getActivePlayerId();
         $this->cards->moveCard($cardId, 'cardsontable', $playerId);
         // XXX check rules here
         $currentCard = $this->cards->getCard($cardId);
-        $value = $currentCard ['type_arg'];
-        $color = $currentCard ['type'];
+        $value = $currentCard['type_arg'];
+        $color = $currentCard['type'];
 
         // First player of trick sets the trick suit
         $currentTrickColor = self::getGameStateValue('trickColor');
@@ -240,24 +242,24 @@ class HeartsBlueInYellow extends Table
         self::notifyAllPlayers(
             'playCard',
             clienttranslate('${playerName} plays ${valueDisplayed} ${colorDisplayed}'),
-            array (
-                'i18n' => array ('colorDisplayed', 'valueDisplayed'),
+            array(
+                'i18n' => array('colorDisplayed', 'valueDisplayed'),
                 'cardId' => $cardId,
                 'playerId' => $playerId,
                 'playerName' => self::getActivePlayerName(),
                 'value' => $value,
-                'valueDisplayed' => $this->values_label [$value],
+                'valueDisplayed' => $this->values_label[$value],
                 'color' => $color,
-                'colorDisplayed' => $this->colors [$color] ['name']
+                'colorDisplayed' => $this->colors[$color]['name']
             )
         );
         // Next player
         $this->gamestate->nextState('playCard');
     }
 
-//////////////////////////////////////////////////////////////////////////////
-//////////// Game state arguments
-////////////
+    //////////////////////////////////////////////////////////////////////////////
+    //////////// Game state arguments
+    ////////////
 
     /*
         Here, you can create methods defined as "game state arguments" (see "args" property in states.inc.php).
@@ -282,13 +284,14 @@ class HeartsBlueInYellow extends Table
     }
     */
 
-    function argGiveCards() {
-        return array ();
+    function argGiveCards()
+    {
+        return array();
     }
 
-//////////////////////////////////////////////////////////////////////////////
-//////////// Game state actions
-////////////
+    //////////////////////////////////////////////////////////////////////////////
+    //////////// Game state actions
+    ////////////
 
     /*
         Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
@@ -308,30 +311,33 @@ class HeartsBlueInYellow extends Table
     }
     */
 
-    function stNewHand() {
+    function stNewHand()
+    {
         // Take back all cards (from any location => null) to deck
         $this->cards->moveAllCardsInLocation(null, "deck");
         $this->cards->shuffle('deck');
         // Deal 13 cards to each players
         // Create deck, shuffle it and give 13 initial cards
         $players = self::loadPlayersBasicInfos();
-        foreach ( $players as $playerId => $player ) {
+        foreach ($players as $playerId => $player) {
             $cards = $this->cards->pickCards(13, 'deck', $playerId);
             // Notify player about his cards
-            self::notifyPlayer($playerId, 'newHand', '', array ('cards' => $cards ));
+            self::notifyPlayer($playerId, 'newHand', '', array('cards' => $cards));
         }
         self::setGameStateValue('alreadyPlayedHearts', 0);
         $this->gamestate->nextState("");
     }
 
-    function stNewTrick() {
+    function stNewTrick()
+    {
         // New trick: active the player who wins the last trick, or the player who own the club-2 card
         // Reset trick color to 0 (= no color)
         self::setGameStateInitialValue('trickColor', 0);
         $this->gamestate->nextState();
     }
 
-    function stNextPlayer() {
+    function stNextPlayer()
+    {
         // Active next player OR end the trick and go to the next trick OR end the hand
         if ($this->cards->countCardInLocation('cardsontable') == 4) {
             // This is the end of the trick
@@ -351,20 +357,21 @@ class HeartsBlueInYellow extends Table
             //  before we move all cards to the winner (during the second)
 
             $players = self::loadPlayersBasicInfos();
-            $bestValuePlayerName = $players [$bestValuePlayerId] ['player_name'];
+            $bestValuePlayerName = $players[$bestValuePlayerId]['player_name'];
 
             self::notifyAllPlayers(
                 'trickWin',
                 clienttranslate('${playerName} wins the trick'),
-                array (
+                array(
                     'playerId' => $bestValuePlayerId,
                     'playerName' => $bestValuePlayerName
                 )
             );
 
             self::notifyAllPlayers(
-                'giveAllCardsToPlayer', '',
-                array ('playerId' => $bestValuePlayerId)
+                'giveAllCardsToPlayer',
+                '',
+                array('playerId' => $bestValuePlayerId)
             );
 
             if ($this->cards->countCardInLocation('hand') == 0) {
@@ -383,22 +390,23 @@ class HeartsBlueInYellow extends Table
         }
     }
 
-    function stEndHand() {
+    function stEndHand()
+    {
         // Count and score points, then end the game or go to the next hand.
         $players = self::loadPlayersBasicInfos();
 
-        $playerToPoints = array ();
+        $playerToPoints = array();
         foreach ($players as $playerId => $player) {
-            $playerToPoints [$playerId] = 0;
+            $playerToPoints[$playerId] = 0;
         }
 
         // Gets all "hearts" + queen of spades (TODO)
         $HEART = 2;
         $cards = $this->cards->getCardsInLocation('cardswon');
         foreach ($cards as $card) {
-            $playerId = $card ['location_arg'];
+            $playerId = $card['location_arg'];
             if ($card['type'] == $HEART) {
-                $playerToPoints [$playerId] ++;
+                $playerToPoints[$playerId]++;
             }
         }
 
@@ -413,16 +421,22 @@ class HeartsBlueInYellow extends Table
                 self::notifyAllPlayers(
                     'points',
                     clienttranslate('${playerName} gets ${nbr} hearts and loses ${nbr} points'),
-                    array (
+                    array(
                         'playerId' => $playerId,
-                        'playerName' => $players [$playerId] ['player_name'],
+                        'playerName' => $players[$playerId]['player_name'],
                         'nbr' => $points
                     )
                 );
             } else {
                 // No point lost (just notify)
-                self::notifyAllPlayers("points", clienttranslate('${player_name} did not get any hearts'), array (
-                    'player_id' => $playerId,'player_name' => $players [$playerId] ['player_name'] ));
+                self::notifyAllPlayers(
+                    "points",
+                    clienttranslate('${player_name} did not get any hearts'),
+                    array(
+                        'player_id' => $playerId,
+                        'player_name' => $players[$playerId]['player_name']
+                    )
+                );
             }
         }
 
@@ -444,9 +458,9 @@ class HeartsBlueInYellow extends Table
         $this->gamestate->nextState("nextHand");
     }
 
-//////////////////////////////////////////////////////////////////////////////
-//////////// Zombie
-////////////
+    //////////////////////////////////////////////////////////////////////////////
+    //////////// Zombie
+    ////////////
 
     /*
         zombieTurn:
@@ -461,15 +475,15 @@ class HeartsBlueInYellow extends Table
         you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message.
     */
 
-    function zombieTurn( $state, $active_player )
+    function zombieTurn($state, $active_player)
     {
-    	$statename = $state['name'];
+        $statename = $state['name'];
 
         if ($state['type'] === "activeplayer") {
             switch ($statename) {
                 default:
-                    $this->gamestate->nextState( "zombiePass" );
-                	break;
+                    $this->gamestate->nextState("zombiePass");
+                    break;
             }
 
             return;
@@ -477,17 +491,17 @@ class HeartsBlueInYellow extends Table
 
         if ($state['type'] === "multipleactiveplayer") {
             // Make sure player is in a non blocking status for role turn
-            $this->gamestate->setPlayerNonMultiactive( $active_player, '' );
+            $this->gamestate->setPlayerNonMultiactive($active_player, '');
 
             return;
         }
 
-        throw new feException( "Zombie mode not supported at this game state: ".$statename );
+        throw new feException("Zombie mode not supported at this game state: " . $statename);
     }
 
-///////////////////////////////////////////////////////////////////////////////////:
-////////// DB upgrade
-//////////
+    ///////////////////////////////////////////////////////////////////////////////////:
+    ////////// DB upgrade
+    //////////
 
     /*
         upgradeTableDb:
@@ -500,7 +514,7 @@ class HeartsBlueInYellow extends Table
 
     */
 
-    function upgradeTableDb( $from_version )
+    function upgradeTableDb($from_version)
     {
         // $from_version is the current version of this game database, in numerical form.
         // For example, if the game was running with a release of your game named "140430-1345",

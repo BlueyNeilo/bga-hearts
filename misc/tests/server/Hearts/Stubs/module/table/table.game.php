@@ -5,7 +5,8 @@ if (!defined('APP_GAMEMODULE_PATH')) {
 }
 
 require_once(__DIR__ . '/../common/deck.game.php');
-
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Configuration;
 
 /**
  * Collection of stub classes for testing and stubs
@@ -54,42 +55,51 @@ class APP_DbObject extends APP_Object
 {
     public $query;
 
+    // Stubbed implementation
+    private $db_conn;
+
+    function __construct()
+    {
+        $this->db_conn = DriverManager::getConnection(
+            CONNECTION_PARAMS,
+            new Configuration()
+        );
+    }
+
     function DbQuery($str)
     {
         $this->query = $str;
-        echo "dbquery: $str\n";
+        $this->db_conn->prepare($str)->executeQuery();
     }
 
     function getUniqueValueFromDB($sql)
     {
-        return 0;
+        $this->db_conn->executeQuery($sql)->fetchOne();
     }
 
     function getCollectionFromDB($query, $single = false)
     {
-        echo "dbquery coll: $query\n";
-        return array();
+        return $this->getNonEmptyCollectionFromDB($query);
     }
 
     function getNonEmptyCollectionFromDB($sql)
     {
-        return array();
+        return $this->db_conn->executeQuery($sql)->fetchAllAssociative();
     }
 
     function getObjectFromDB($sql)
     {
-        return array();
+        return $this->getNonEmptyObjectFromDB($sql);
     }
 
     function getNonEmptyObjectFromDB($sql)
     {
-        return array();
+        return $this->db_conn->fetchAssociative($sql);
     }
 
     function getObjectListFromDB($query, $single = false)
     {
-        echo "dbquery list: $query\n";
-        return array();
+        return $this->db_conn->fetchAllAssociative($query);
     }
 
     function getDoubleKeyCollectionFromDB($sql, $bSingleValue = false)
@@ -138,14 +148,14 @@ class GameState
     function state()
     {
         if (array_key_exists($this->current_state, $this->states)) {
-            $state =  $this->states[$this->current_state];
+            $state = $this->states[$this->current_state];
             $state['id'] = $this->current_state;
             return $state;
         }
         return [];
     }
 
-    function getStateNumberByTransition($transition)
+    function getStateNumberByTransition($transition = null)
     {
         $state = $this->state();
         foreach ($state['transitions'] as $pos => $next_state) {
@@ -212,7 +222,7 @@ class GameState
     {
     }
 
-    function nextState($transition)
+    function nextState($transition = null)
     {
         $x = $this->getStateNumberByTransition($transition);
         $this->jumpToState($x);
@@ -235,7 +245,7 @@ class GameState
 
     function getPrivateState($playerId)
     {
-        return  $this->private_states[$playerId] ?? null;
+        return $this->private_states[$playerId] ?? null;
     }
 
     function nextPrivateStateForPlayers($ids, $transition)
@@ -446,6 +456,7 @@ abstract class Table extends APP_GameClass
      */
     protected function activeNextPlayer()
     {
+        return "";
     }
 
     /**
@@ -584,7 +595,10 @@ abstract class Table extends APP_GameClass
     }
 
 
-    function getGameinfos()
+    /**
+     * @suppress PHP0419
+     */
+    function getGameinfos(): array
     {
         unset($gameinfos);
         require('gameinfos.inc.php');
@@ -678,7 +692,7 @@ define('AT_base64', 33);         // Base64 string
 
 define("FEX_bad_input_argument", 300);
 
-class APP_GameAction extends  APP_Action
+class APP_GameAction extends APP_Action
 {
     protected $game;
     protected $view;

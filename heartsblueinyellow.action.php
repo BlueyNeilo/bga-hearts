@@ -22,24 +22,21 @@
  */
 
 
-  class action_heartsblueinyellow extends APP_GameAction
-  {
+class action_heartsblueinyellow extends APP_GameAction
+{
     // Constructor: please do not modify
-   	public function __default()
-  	{
-  	    if( self::isArg( 'notifwindow') )
-  	    {
+    public function __default()
+    {
+        if (self::isArg('notifwindow')) {
             $this->view = "common_notifwindow";
-  	        $this->viewArgs['table'] = self::getArg( "table", AT_posint, true );
-  	    }
-  	    else
-  	    {
+            $this->viewArgs['table'] = self::getArg("table", AT_posint, true);
+        } else {
             $this->view = "heartsblueinyellow_heartsblueinyellow";
-            self::trace( "Complete reinitialization of board game" );
-      }
-  	}
+            self::trace("Complete reinitialization of board game");
+        }
+    }
 
-  	// TODO: defines your action entry points there
+    // TODO: defines your action entry points there
 
 
     /*
@@ -63,13 +60,14 @@
 
     */
 
-    public function playCard() {
+    public function playCard()
+    {
         self::setAjaxMode();
         $cardId = self::getArg("id", AT_posint, true);
         $this->game->playCard($cardId);
         self::ajaxResponse();
     }
 
-  }
+}
 
 

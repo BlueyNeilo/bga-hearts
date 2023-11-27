@@ -194,8 +194,7 @@ class Deck extends APP_GameClass
         $sql = "SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg ";
         $sql .= "FROM " . $this->table;
         $sql .= " WHERE card_id='$card_id' ";
-        $dbres = self::DbQuery($sql);
-        return mysql_fetch_assoc($dbres);
+        return self::getObjectFromDB($sql);
     }
 
     // Get specific cards infos
@@ -230,7 +229,7 @@ class Deck extends APP_GameClass
 
 
     // Return count of cards in location with optional arg
-    function countCardsInLocation($location, $location_arg = null)
+    function countCardInLocation($location, $location_arg = null)
     {
         return 0;
     }
