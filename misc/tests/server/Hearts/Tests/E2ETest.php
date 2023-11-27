@@ -176,6 +176,33 @@ final class E2ETest extends TestCase
         $this->assertEquals(13, count($gamedata['hand']));
     }
 
+    public function testPlayCardFromHand()
+    {
+        $m = new GameSetup();
+        $m->setupNewGame($m->setupPlayers(4));
+        $m->gamestate->changeManualActionMode(false);
+        $m->gamestate->nextState();
+
+        // TODO: Replace logic with zombie turn from player
+        $m->setCurrentPlayer(PLAYER1);
+        $gamedata_player1 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player1['hand'])[0]['id']);
+
+        // First player should have less cards in hand
+        $gamedata_player1 = $m->getAllDatas();
+        $this->assertEquals(12, count($gamedata_player1['hand']));
+        $this->assertEquals(1, count($gamedata_player1['cardsontable']));
+
+        // Other players should see cards on table
+        $m->setCurrentPlayer(PLAYER3);
+        $gamedata_player3 = $m->getAllDatas();
+        $this->assertEquals(13, count($gamedata_player3['hand']));
+        $this->assertEquals(1, count($gamedata_player3['cardsontable']));
+
+        // Transitions to next player
+        $this->assertEquals(PLAYER2, $m->getActivePlayerId());
+    }
+
     public function testSetupThreePlayerNewGame()
     {
         $m = new GameSetup();

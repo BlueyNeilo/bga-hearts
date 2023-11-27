@@ -154,6 +154,8 @@ class Deck extends APP_GameClass
     {
         self::checkLocation($location);
         self::checkLocationArg($location_arg);
+        $sql = "UPDATE card SET card_location='$location' WHERE card_id=$card_id and card_location_arg='$location_arg'";
+        self::DbQuery($sql);
     }
 
     // Move cards to specific location
@@ -190,10 +192,13 @@ class Deck extends APP_GameClass
         if ($from_location != null) {
             self::checkLocation($from_location);
             $read_sql .= " WHERE card_location='$from_location'";
+            if ($from_location_arg != null) {
+                $read_sql .= " AND card_location_arg='$from_location_arg'";
+            }
         }
         self::checkLocation($to_location);
         $card_ids = array_map(fn($record) => $record["card_id"], self::getCollectionFromDB($read_sql));
-        $write_sql = "UPDATE card SET card_location='$to_location' WHERE card_id in (" . implode(',', $card_ids) . ")";
+        $write_sql = "UPDATE card SET card_location='$to_location', card_location_arg='$to_location_arg' WHERE card_id in (" . implode(',', $card_ids) . ")";
         $this->DbQuery($write_sql);
     }
 
