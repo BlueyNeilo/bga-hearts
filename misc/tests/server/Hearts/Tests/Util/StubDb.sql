@@ -27,14 +27,14 @@ ALTER TABLE `player`
 
 DROP TRIGGER IF EXISTS `before_insert_player`;
 -- DELIMITER $$
-CREATE TRIGGER `before_insert_player`
-  BEFORE INSERT ON `player`
-  FOR EACH ROW
-    BEGIN
-      IF NEW.player_canal IS NULL THEN
-        SET NEW.player_canal = REPLACE(UUID(), '-', '');
-      END IF;
-    END;
+-- CREATE TRIGGER `before_insert_player`
+--   BEFORE INSERT ON `player`
+--   FOR EACH ROW
+--     BEGIN
+--       IF NEW.player_canal IS NULL THEN
+--         SET NEW.player_canal = REPLACE(UUID(), '-', '');
+--       END IF;
+--     END;
 -- $$
 -- DELIMITER ;
 

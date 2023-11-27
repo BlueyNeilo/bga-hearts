@@ -11,7 +11,7 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Configuration;
 use Ramsey\Uuid\Uuid;
 
-require_once PROJECT_PATH . "/heartsblueinyellow.game.php";
+require_once "heartsblueinyellow.game.php";
 require_once(__DIR__ . '/Util/Constants.php');
 require PROJECT_PATH . '/vendor/autoload.php';
 
@@ -41,19 +41,32 @@ class GameSetup extends HeartsBlueInYellow
         );
         $players = array();
         foreach ($player_ids as $player_no => $player_id) {
-            array_push(
-                $players,
-                array(
-                    'player_id' => $player_id,
-                    'player_color' => 'ff0000',
-                    'player_canal' => Uuid::uuid4()->getHex()->toString(),
-                    'player_name' => 'TestPlayer' . $player_no,
-                    'player_avatar' => '',
-                )
+            $players[$player_id] = array(
+                'player_id' => $player_id,
+                'player_color' => 'ff0000',
+                'player_canal' => Uuid::uuid4()->getHex()->toString(),
+                'player_name' => 'TestPlayer' . ($player_no + 1),
+                'player_avatar' => '',
+                'player_no' => $player_no + 1,
             );
         }
 
         return $players;
+    }
+
+    function activeNextPlayer()
+    {
+        parent::activeNextPlayer();
+    }
+
+    function setCurrentPlayer($player_id)
+    {
+        parent::setCurrentPlayer($player_id);
+    }
+
+    function getAllDatas()
+    {
+        return parent::getAllDatas();
     }
 }
 
@@ -106,6 +119,62 @@ final class E2ETest extends TestCase
         $this->assertEquals(0, $m->getGameStateValue('alreadyPlayedHearts'));
 
         $this->assertEquals(52, count($m->getCards()->getCardsInLocation('deck')));
+        $this->assertEquals(PLAYER1, $m->getActivePlayerId());
+        $this->assertEquals(1, $m->gamestate->state()['id']);
+    }
+
+    public function testCycleActivePlayers()
+    {
+        $m = new GameSetup();
+        $m->setupNewGame($m->setupPlayers(4));
+        $m->activeNextPlayer();
+        $this->assertEquals(PLAYER2, $m->getActivePlayerId());
+
+        $m->activeNextPlayer();
+        $this->assertEquals(PLAYER3, $m->getActivePlayerId());
+
+        $m->activeNextPlayer();
+        $this->assertEquals(PLAYER4, $m->getActivePlayerId());
+
+        $m->activeNextPlayer();
+        $this->assertEquals(PLAYER1, $m->getActivePlayerId());
+    }
+
+    public function testCurrentPlayerInitData()
+    {
+        $m = new GameSetup();
+        $m->setupNewGame($m->setupPlayers(4));
+        $m->setCurrentPlayer(PLAYER2);
+
+        $gameData = $m->getAllDatas();
+        $this->assertEquals(4, count($gameData['players']));
+        $this->assertEquals(0, count($gameData['hand']));
+        $this->assertEquals(0, count($gameData['cardsontable']));
+    }
+
+    public function testStateManualActionExecution()
+    {
+        $m = new GameSetup();
+        $m->setupNewGame($m->setupPlayers(4));
+        $this->assertEquals(1, $m->gamestate->state()['id']);
+        $m->gamestate->nextState();
+        $this->assertEquals(20, $m->gamestate->state()['id']);
+        $m->gamestate->runStateAction();
+        $this->assertEquals(30, $m->gamestate->state()['id']);
+    }
+
+    public function testStateAutoActionExecutionToPlayHand()
+    {
+        $m = new GameSetup();
+        $m->setupNewGame($m->setupPlayers(4));
+        $m->gamestate->changeManualActionMode(false);
+        $m->gamestate->nextState();
+        $this->assertEquals(31, $m->gamestate->state()['id']);
+
+        $m->setCurrentPlayer(PLAYER3);
+        $gamedata = $m->getAllDatas();
+        // Failing due to missing deck stubs
+        $this->assertEquals(13, count($gamedata['hand']));
     }
 
     public function testSetupThreePlayerNewGame()

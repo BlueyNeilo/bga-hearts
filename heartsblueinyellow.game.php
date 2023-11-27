@@ -178,8 +178,8 @@ class HeartsBlueInYellow extends Table
 
 
     //////////////////////////////////////////////////////////////////////////////
-//////////// Utility functions
-////////////
+    //////////// Utility functions
+    ////////////
 
     /*
         In this space, you can put any utility methods useful for your game logic

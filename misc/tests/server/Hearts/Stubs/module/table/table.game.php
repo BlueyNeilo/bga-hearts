@@ -77,7 +77,7 @@ class APP_DbObject extends APP_Object
 
     function getUniqueValueFromDB($sql)
     {
-        $this->db_conn()->executeQuery($sql)->fetchOne();
+        return $this->db_conn()->executeQuery($sql)->fetchOne();
     }
 
     function getCollectionFromDB($query, $single = false)
@@ -138,14 +138,19 @@ class APP_GameClass extends APP_DbObject
 class GameState
 {
     public $table_globals;
-    private $current_state = 2;
+
+    protected $action_callback = null;
+    protected $manual_action_mode = true;
+    private $current_state = 1;
     private $active_player = null;
     private $states = [];
     private $private_states = [];
 
-    function __construct($states = [])
+    function __construct($states = [], $action_callback = null, $manual_action_mode = true)
     {
         $this->states = $states;
+        $this->action_callback = $action_callback;
+        $this->manual_action_mode = $manual_action_mode;
     }
 
     function state()
@@ -217,7 +222,7 @@ class GameState
     // players can be active if game state is "multiplayer"
     public function isPlayerActive($player_id)
     {
-        return false;
+        return $player_id == $this->getPlayerActiveThisTurn();
     }
 
 
@@ -234,10 +239,34 @@ class GameState
     function jumpToState($stateNum)
     {
         $this->current_state = $stateNum;
+
+        if (!$this->manual_action_mode) {
+            $this->runStateAction();
+        }
+    }
+
+    function changeManualActionMode($is_manual_mode)
+    {
+        $this->manual_action_mode = $is_manual_mode;
+    }
+
+    function runStateAction()
+    {
+        $state = $this->states[$this->current_state];
+        if (isset($state['action'])) {
+            call_user_func($this->action_callback, $state['action']);
+        }
     }
 
     function checkPossibleAction($action)
     {
+        $state = $this->states[$this->current_state];
+        count(
+            array_filter(
+                $state['possibleactions'],
+                fn($possible_action) => $possible_action == $action
+            )
+        ) > 0;
     }
 
     function reloadState()
@@ -334,6 +363,8 @@ class feException extends Exception
 
 abstract class Table extends APP_GameClass
 {
+    protected $current_player = null;
+    protected $notif_log = array();
     var $players = array();
     public $gamename;
     public $gamestate = null;
@@ -342,11 +373,10 @@ abstract class Table extends APP_GameClass
     public function __construct()
     {
         parent::__construct();
-        $this->gamestate = new GameState();
-        $this->players = array(
-            1 => array('player_name' => $this->getActivePlayerName(), 'player_color' => 'ff0000'),
-            2 => array('player_name' => 'player2', 'player_color' => '0000ff')
-        );
+
+        require('states.inc.php');
+        $this->gamestate = new GameState($machinestates, fn($action) => $this->$action(), true);
+        $this->players = array();
     }
 
     /** Report gamename for translation function */
@@ -359,12 +389,12 @@ abstract class Table extends APP_GameClass
 
     function getActivePlayerId()
     {
-        return 1;
+        return $this->gamestate->getPlayerActiveThisTurn();
     }
 
     function getActivePlayerName()
     {
-        return "player1";
+        return $this->players[$this->getActivePlayerId()]['player_name'];
     }
 
     function getTableOptions()
@@ -379,34 +409,40 @@ abstract class Table extends APP_GameClass
 
     function loadPlayersBasicInfos()
     {
-        $default_colors = array("ff0000", "008000", "0000ff", "ffa500", "4c1b5b");
-        $values = array();
-        $id = 1;
-        foreach ($default_colors as $color) {
-            $values[$id] = array('player_id' => $id, 'player_color' => $color, 'player_name' => "player$id", 'player_zombie' => 0);
-            $id++;
+        $sql = "SELECT player_no, player_id, player_color, player_name, player_zombie from player";
+        $players_data = $this->getCollectionFromDB($sql);
+        $players = array();
+
+        foreach ($players_data as $player) {
+            $players[$player["player_id"]] = $player;
         }
-        return $values;
+        $this->players = $players;
+        return $this->players;
+    }
+
+    protected function setCurrentPlayer($player_id)
+    {
+        $this->current_player = $player_id;
     }
 
     protected function getCurrentPlayerId()
     {
-        return 1;
+        return $this->current_player;
     }
 
     protected function getCurrentPlayerName()
     {
-        return '';
+        return $this->players[$this->current_player]["player_name"];
     }
 
     protected function getCurrentPlayerColor()
     {
-        return '';
+        return $this->players[$this->current_player]["player_color"];
     }
 
     function isCurrentPlayerZombie()
     {
-        return false;
+        return $this->players[$this->current_player]["player_zombie"];
     }
 
     public function getPlayerNameById($player_id)
@@ -465,7 +501,14 @@ abstract class Table extends APP_GameClass
      */
     protected function activeNextPlayer()
     {
-        return "";
+        $active_player = $this->getActivePlayerId();
+        $next_player = array_keys($this->players)[0];
+        if (isset($active_player)) {
+            $next_player = $this->getPlayerAfter($active_player);
+        }
+
+        $this->gamestate->changeActivePlayer($next_player);
+        return $next_player;
     }
 
     /**
@@ -473,6 +516,14 @@ abstract class Table extends APP_GameClass
      */
     protected function activePrevPlayer()
     {
+        $active_player = $this->getActivePlayerId();
+        $prev_player = array_keys($this->players)[0];
+        if (isset($active_player)) {
+            $prev_player = $this->getPlayerBefore($active_player);
+        }
+
+        $this->gamestate->changeActivePlayer($prev_player);
+        return $prev_player;
     }
 
     /**
@@ -483,6 +534,7 @@ abstract class Table extends APP_GameClass
      */
     function checkAction($actionName, $bThrowException = true)
     {
+        return $this->gamestate->checkPossibleAction($actionName);
     }
 
     function getNextPlayerTable()
@@ -497,12 +549,30 @@ abstract class Table extends APP_GameClass
 
     function getPlayerAfter($player_id)
     {
-        return 0;
+        $player_no = $this->getPlayerNoById($player_id);
+
+        $next_player_id = array_values(
+            array_filter(
+                $this->players,
+                fn($player) => $player['player_no'] == $player_no - count($this->players) + 1 || $player['player_no'] == $player_no + 1,
+            )
+        )[0]['player_id'];
+
+        return $next_player_id;
     }
 
     function getPlayerBefore($player_id)
     {
-        return 0;
+        $player_no = $this->getPlayerNoById($player_id);
+
+        $prev_player_id = array_values(
+            array_filter(
+                $this->players,
+                fn($player) => $player['player_no'] == $player_no + count($this->players) - 1 || $player['player_no'] == $player_no - 1,
+            )
+        )[0]['player_id'];
+
+        return $prev_player_id;
     }
 
     function createNextPlayerTable($players, $bLoop = true)
@@ -517,18 +587,22 @@ abstract class Table extends APP_GameClass
 
     function notifyAllPlayers($type, $message, $args)
     {
-        $args2 = array();
-        foreach ($args as $key => $val) {
-            $key = '${' . $key . '}';
-            $args2[$key] = $val;
-        }
-        echo "$type: $message\n";
-        //. strtr($message,                $args2)
-        echo "\n";
+        $this->notif_log[] = array(
+            'players' => array_map(fn($player) => $player['player_id'], $this->players),
+            'type' => $type,
+            'message' => $message,
+            'args' => $args,
+        );
     }
 
     function notifyPlayer($player_id, $notification_type, $notification_log, $notification_args)
     {
+        $this->notif_log[] = array(
+            'players' => array($player_id),
+            'type' => $notification_type,
+            'message' => $notification_log,
+            'args' => $notification_args,
+        );
     }
 
     function getStatTypes()
@@ -573,6 +647,7 @@ abstract class Table extends APP_GameClass
 
     function reloadPlayersBasicInfos()
     {
+        $this->loadPlayersBasicInfos();
     }
 
     function getNew($deck_definition): object
