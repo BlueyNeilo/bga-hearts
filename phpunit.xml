@@ -1,0 +1,7 @@
+<phpunit colors="true" cacheResultFile="vendor/bin/.phpunit.result.cache" bootstrap="vendor/autoload.php">
+<testsuites>
+  <testsuite name="Tests">
+    <directory>misc/tests</directory>
+  </testsuite>
+</testsuites>
+</phpunit>
