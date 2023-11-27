@@ -54,6 +54,7 @@ class HeartsBlueInYellow extends Table
                 "currentHandType" => 10,
                 "trickColor" => 11,
                 "alreadyPlayedHearts" => 12,
+                "pointsToLose" => 13,
             )
         );
 
@@ -110,6 +111,8 @@ class HeartsBlueInYellow extends Table
 
         // Mark if we already played hearts during this hand
         self::setGameStateInitialValue('alreadyPlayedHearts', 0);
+
+        self::setGameStateInitialValue('pointsToLose', 100);
 
         // Create cards
         $cards = array();
@@ -447,7 +450,7 @@ class HeartsBlueInYellow extends Table
 
         // Test if this is the end of the game
         foreach ($newScores as $playerId => $score) {
-            if ($score <= -100) {
+            if ($score <= -self::getGameStateValue('pointsToLose')) {
                 // Trigger the end of the game !
                 $this->gamestate->nextState("endGame");
                 return;

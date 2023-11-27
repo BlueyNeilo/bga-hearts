@@ -117,6 +117,7 @@ final class E2ETest extends TestCase
         $this->assertEquals(0, $m->getGameStateValue('currentHandType'));
         $this->assertEquals(0, $m->getGameStateValue('trickColor'));
         $this->assertEquals(0, $m->getGameStateValue('alreadyPlayedHearts'));
+        $this->assertEquals(100, $m->getGameStateValue('pointsToLose'));
 
         $this->assertEquals(52, count($m->getCards()->getCardsInLocation('deck')));
         $this->assertEquals(PLAYER1, $m->getActivePlayerId());
@@ -201,6 +202,99 @@ final class E2ETest extends TestCase
 
         // Transitions to next player
         $this->assertEquals(PLAYER2, $m->getActivePlayerId());
+    }
+
+    public function testTransitionsToNewTrick()
+    {
+        $m = new GameSetup();
+        $m->setupNewGame($m->setupPlayers(4));
+        $m->gamestate->changeManualActionMode(false);
+        $m->gamestate->nextState();
+
+        // TODO: Replace logic with zombie turn from player
+        $m->setCurrentPlayer(PLAYER1);
+        $gamedata_player1 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player1['hand'])[0]['id']);
+
+        $m->setCurrentPlayer(PLAYER2);
+        $gamedata_player2 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player2['hand'])[0]['id']);
+
+        $m->setCurrentPlayer(PLAYER3);
+        $gamedata_player3 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player3['hand'])[0]['id']);
+
+        $m->gamestate->changeManualActionMode(true);
+
+        $m->setCurrentPlayer(PLAYER4);
+        $gamedata_player4 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player4['hand'])[0]['id']);
+
+        $this->assertEquals(32, $m->gamestate->state()['id']);
+        $m->gamestate->runStateAction();
+        $this->assertEquals(30, $m->gamestate->state()['id']);
+        $m->gamestate->runStateAction();
+        $this->assertEquals(31, $m->gamestate->state()['id']);
+
+        // Transitions to first player - trick winner
+        $this->assertEquals(PLAYER1, $m->getActivePlayerId());
+    }
+
+    public function testSimpleUnshuffledSingleHandEndGame()
+    {
+        $m = new GameSetup();
+        $m->setupNewGame($m->setupPlayers(4));
+        // Make it a short game - no multiple rounds
+        $m->setGameStateValue('pointsToLose', 10);
+
+        $m->gamestate->changeManualActionMode(false);
+        $m->gamestate->nextState();
+
+        // Player 1 starts and wins all the rounds, Player 1 gets all the hearts
+        for ($i = 0; $i < 12; $i++) {
+            $m->setCurrentPlayer(PLAYER1);
+            $gamedata_player1 = $m->getAllDatas();
+            $m->playCard(array_values($gamedata_player1['hand'])[0]['id']);
+
+            $m->setCurrentPlayer(PLAYER2);
+            $gamedata_player2 = $m->getAllDatas();
+            $m->playCard(array_values($gamedata_player2['hand'])[0]['id']);
+
+            $m->setCurrentPlayer(PLAYER3);
+            $gamedata_player3 = $m->getAllDatas();
+            $m->playCard(array_values($gamedata_player3['hand'])[0]['id']);
+
+            $m->setCurrentPlayer(PLAYER4);
+            $gamedata_player4 = $m->getAllDatas();
+            $m->playCard(array_values($gamedata_player4['hand'])[0]['id']);
+        }
+
+        // Slow down simulation for last round to check game state
+        $m->setCurrentPlayer(PLAYER1);
+        $gamedata_player1 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player1['hand'])[0]['id']);
+
+        $m->setCurrentPlayer(PLAYER2);
+        $gamedata_player2 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player2['hand'])[0]['id']);
+
+        $m->setCurrentPlayer(PLAYER3);
+        $gamedata_player3 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player3['hand'])[0]['id']);
+
+        $m->gamestate->changeManualActionMode(true);
+
+        $m->setCurrentPlayer(PLAYER4);
+        $gamedata_player4 = $m->getAllDatas();
+        $m->playCard(array_values($gamedata_player4['hand'])[0]['id']);
+
+        $this->assertEquals(32, $m->gamestate->state()['id']);
+        $m->gamestate->runStateAction();
+        $this->assertEquals(40, $m->gamestate->state()['id']);
+        $m->gamestate->runStateAction();
+
+        // End of game
+        $this->assertEquals(99, $m->gamestate->state()['id']);
     }
 
     public function testSetupThreePlayerNewGame()

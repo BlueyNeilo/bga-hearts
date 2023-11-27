@@ -87,7 +87,21 @@ class APP_DbObject extends APP_Object
 
     function getNonEmptyCollectionFromDB($sql)
     {
-        return $this->db_conn()->executeQuery($sql)->fetchAllAssociative();
+        // Massages the return data format based on how the real library performs
+        $all = $this->db_conn()->executeQuery($sql)->fetchAllAssociative();
+        $collection = array();
+        if ($all) {
+            $first_key = array_key_first($all[0]);
+            foreach ($all as $row) {
+                $key = $row[$first_key];
+                array_shift($row);
+                if (count($row) == 1) {
+                    $row = array_values($row)[0];
+                }
+                $collection[$key] = $row;
+            }
+        }
+        return $collection;
     }
 
     function getObjectFromDB($sql)
@@ -410,7 +424,7 @@ abstract class Table extends APP_GameClass
     function loadPlayersBasicInfos()
     {
         $sql = "SELECT player_no, player_id, player_color, player_name, player_zombie from player";
-        $players_data = $this->getCollectionFromDB($sql);
+        $players_data = $this->getObjectListFromDB($sql);
         $players = array();
 
         foreach ($players_data as $player) {

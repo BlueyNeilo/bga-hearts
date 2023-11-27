@@ -112,7 +112,7 @@ class Deck extends APP_GameClass
         self::checkLocation($from_location);
 
         $read_sql = "SELECT card_id from card WHERE card_location = '$from_location' LIMIT $nbr";
-        $card_ids = array_map(fn($record) => $record["card_id"], self::getCollectionFromDB($read_sql));
+        $card_ids = array_map(fn($record) => $record["card_id"], self::getObjectListFromDB($read_sql));
 
         $write_sql = "UPDATE card SET card_location='$to_location', card_location_arg='$state' WHERE card_id in (" . implode(',', $card_ids) . ")";
         self::DbQuery($write_sql);
@@ -120,7 +120,7 @@ class Deck extends APP_GameClass
         $result_sql = "SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg";
         $result_sql .= " FROM " . $this->table;
         $result_sql .= " WHERE card_id in (" . implode(',', $card_ids) . ")";
-        return self::getCollectionFromDB($result_sql);
+        return self::getObjectListFromDB($result_sql);
     }
 
 
@@ -197,7 +197,7 @@ class Deck extends APP_GameClass
             }
         }
         self::checkLocation($to_location);
-        $card_ids = array_map(fn($record) => $record["card_id"], self::getCollectionFromDB($read_sql));
+        $card_ids = array_map(fn($record) => $record["card_id"], self::getObjectListFromDB($read_sql));
         $write_sql = "UPDATE card SET card_location='$to_location', card_location_arg='$to_location_arg' WHERE card_id in (" . implode(',', $card_ids) . ")";
         $this->DbQuery($write_sql);
     }
@@ -220,7 +220,7 @@ class Deck extends APP_GameClass
         if (!is_null($location_arg)) {
             $sql .= "AND card_location_arg='$location_arg' ";
         }
-        return self::getCollectionFromDB($sql);
+        return self::getObjectListFromDB($sql);
     }
 
     function getPlayerHand($player_id)
@@ -272,7 +272,11 @@ class Deck extends APP_GameClass
     // Return count of cards in location with optional arg
     function countCardInLocation($location, $location_arg = null)
     {
-        return 0;
+        $sql = "SELECT count(*) FROM card WHERE card_location='$location'";
+        if ($location_arg) {
+            $sql .= " AND card_location_arg='$location_arg'";
+        }
+        return self::getUniqueValueFromDB($sql);
     }
 
     // Return an array "location" => number of cards
