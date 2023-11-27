@@ -110,7 +110,17 @@ class Deck extends APP_GameClass
     function pickCardsForLocation($nbr, $from_location, $to_location, $state = 0, $no_deck_reform = false)
     {
         self::checkLocation($from_location);
-        return [];
+
+        $read_sql = "SELECT card_id from card WHERE card_location = '$from_location' LIMIT $nbr";
+        $card_ids = array_map(fn($record) => $record["card_id"], self::getCollectionFromDB($read_sql));
+
+        $write_sql = "UPDATE card SET card_location='$to_location', card_location_arg='$state' WHERE card_id in (" . implode(',', $card_ids) . ")";
+        self::DbQuery($write_sql);
+
+        $result_sql = "SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg";
+        $result_sql .= " FROM " . $this->table;
+        $result_sql .= " WHERE card_id in (" . implode(',', $card_ids) . ")";
+        return self::getCollectionFromDB($result_sql);
     }
 
 
@@ -175,9 +185,16 @@ class Deck extends APP_GameClass
     // if "from_location" and "from_state" are null: move ALL cards to specific location
     function moveAllCardsInLocation($from_location, $to_location, $from_location_arg = null, $to_location_arg = 0)
     {
-        if ($from_location != null)
+        $read_sql = "SELECT card_id FROM card";
+
+        if ($from_location != null) {
             self::checkLocation($from_location);
+            $read_sql .= " WHERE card_location='$from_location'";
+        }
         self::checkLocation($to_location);
+        $card_ids = array_map(fn($record) => $record["card_id"], self::getCollectionFromDB($read_sql));
+        $write_sql = "UPDATE card SET card_location='$to_location' WHERE card_id in (" . implode(',', $card_ids) . ")";
+        $this->DbQuery($write_sql);
     }
 
     /**
@@ -185,8 +202,7 @@ class Deck extends APP_GameClass
      */
     function moveAllCardsInLocationKeepOrder($from_location, $to_location)
     {
-        self::checkLocation($from_location);
-        self::checkLocation($to_location);
+        $this->moveAllCardsInLocation($from_location, $to_location);
     }
 
     // Return all cards in specific location

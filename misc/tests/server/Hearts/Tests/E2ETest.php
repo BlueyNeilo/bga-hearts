@@ -173,7 +173,6 @@ final class E2ETest extends TestCase
 
         $m->setCurrentPlayer(PLAYER3);
         $gamedata = $m->getAllDatas();
-        // Failing due to missing deck stubs
         $this->assertEquals(13, count($gamedata['hand']));
     }
 
