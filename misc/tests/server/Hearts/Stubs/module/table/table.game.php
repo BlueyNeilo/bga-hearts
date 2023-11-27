@@ -56,25 +56,28 @@ class APP_DbObject extends APP_Object
     public $query;
 
     // Stubbed implementation
-    private $db_conn;
+    private $_db_conn;
 
-    function __construct()
+    private function db_conn()
     {
-        $this->db_conn = DriverManager::getConnection(
-            CONNECTION_PARAMS,
-            new Configuration()
-        );
+        if (!$this->_db_conn) {
+            $this->_db_conn = DriverManager::getConnection(
+                CONNECTION_PARAMS,
+                new Configuration()
+            );
+        }
+        return $this->_db_conn;
     }
 
     function DbQuery($str)
     {
         $this->query = $str;
-        $this->db_conn->prepare($str)->executeQuery();
+        $this->db_conn()->prepare($str)->executeQuery();
     }
 
     function getUniqueValueFromDB($sql)
     {
-        $this->db_conn->executeQuery($sql)->fetchOne();
+        $this->db_conn()->executeQuery($sql)->fetchOne();
     }
 
     function getCollectionFromDB($query, $single = false)
@@ -84,7 +87,7 @@ class APP_DbObject extends APP_Object
 
     function getNonEmptyCollectionFromDB($sql)
     {
-        return $this->db_conn->executeQuery($sql)->fetchAllAssociative();
+        return $this->db_conn()->executeQuery($sql)->fetchAllAssociative();
     }
 
     function getObjectFromDB($sql)
@@ -94,12 +97,12 @@ class APP_DbObject extends APP_Object
 
     function getNonEmptyObjectFromDB($sql)
     {
-        return $this->db_conn->fetchAssociative($sql);
+        return $this->db_conn()->fetchAssociative($sql);
     }
 
     function getObjectListFromDB($query, $single = false)
     {
-        return $this->db_conn->fetchAllAssociative($query);
+        return $this->db_conn()->fetchAllAssociative($query);
     }
 
     function getDoubleKeyCollectionFromDB($sql, $bSingleValue = false)
@@ -431,24 +434,30 @@ abstract class Table extends APP_GameClass
      */
     function initGameStateLabels($labels)
     {
+        $this->gamestate->table_globals = $labels;
     }
 
     function setGameStateInitialValue($value_label, $value_value)
     {
+        $this->setGameStateValue($value_label, $value_value);
     }
 
     function getGameStateValue($value_label)
     {
-        return 0;
+        return $this->gamestate->table_globals[$value_label];
     }
 
     function setGameStateValue($value_label, $value_value)
     {
+        $this->gamestate->table_globals[$value_label] = $value_value;
     }
 
     function incGameStateValue($value_label, $increment)
     {
-        return 0;
+        $this->setGameStateValue(
+            $value_label,
+            $this->getGameStateValue($value_label) + $increment
+        );
     }
 
     /**

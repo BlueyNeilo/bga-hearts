@@ -38,11 +38,11 @@ CREATE TRIGGER `before_insert_player`
 -- $$
 -- DELIMITER ;
 
-INSERT INTO `player` (`player_no`, `player_id`, `player_name`) VALUES
-(1, 24810371, 'TestPlayer1'),
-(2, 24810372, 'TestPlayer2'),
-(3, 24810373, 'TestPlayer3'),
-(4, 24810374, 'TestPlayer4');
+-- INSERT INTO `player` (`player_no`, `player_id`, `player_name`) VALUES
+-- (1, 24810371, 'TestPlayer1'),
+-- (2, 24810372, 'TestPlayer2'),
+-- (3, 24810373, 'TestPlayer3'),
+-- (4, 24810374, 'TestPlayer4');
 
 CREATE TABLE IF NOT EXISTS `stats` (
   `stats_id` int(10) UNSIGNED NOT NULL,

@@ -36,7 +36,7 @@ use Hearts\ScoringHelper;
 
 class HeartsBlueInYellow extends Table
 {
-    private Deck $cards;
+    protected Deck $cards;
     public array $colors;
     public array $values_label;
 
@@ -80,7 +80,7 @@ class HeartsBlueInYellow extends Table
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
         $gameinfos = self::getGameinfos();
-        $default_colors = (array)$gameinfos['player_colors'];
+        $default_colors = $gameinfos['player_colors'];
 
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.

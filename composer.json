@@ -21,7 +21,8 @@
   "require-dev": {
     "phpunit/phpunit": ">=9 <10",
     "doctrine/dbal": "^2.5.12",
-    "ext-pdo_mysql": "*"
+    "ext-pdo_mysql": "*",
+    "ramsey/uuid": "^4.2"
   },
   "scripts": {
     "generate": "php modules/server/Hearts/Util/generate_state_diagram.php > misc/state-machine.dot && dot -Tpng -o misc/state-machine.png misc/state-machine.dot",

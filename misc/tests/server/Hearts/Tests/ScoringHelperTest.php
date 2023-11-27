@@ -16,32 +16,35 @@ final class ScoringHelperTest extends TestCase
         $current_trick_color = 1;
 
         $playedCards = array(
-            array (
+            array(
                 'type' => $current_trick_color,
                 'type_arg' => 2,
                 'location_arg' => PLAYER1
             ),
-            array (
+            array(
                 'type' => $current_trick_color,
                 'type_arg' => 4,
                 'location_arg' => PLAYER2
             ),
-            array (
+            array(
                 'type' => $current_trick_color,
                 'type_arg' => 7,
                 'location_arg' => PLAYER3
             ),
-            array (
+            array(
                 'type' => $current_trick_color,
                 'type_arg' => 3,
                 'location_arg' => PLAYER4
             )
         );
 
-        $this->assertSame(PLAYER3, ScoringHelper::calculateTrickWinner(
-            $playedCards,
-            $current_trick_color
-        ));
+        $this->assertSame(
+            PLAYER3,
+            ScoringHelper::calculateTrickWinner(
+                $playedCards,
+                $current_trick_color
+            )
+        );
     }
 
     public function testMixedSuitsHigherCurrentTrickWins(): void
@@ -49,32 +52,35 @@ final class ScoringHelperTest extends TestCase
         $current_trick_color = 3;
 
         $playedCards = array(
-            array (
+            array(
                 'type' => $current_trick_color,
                 'type_arg' => 5,
                 'location_arg' => PLAYER1
             ),
-            array (
+            array(
                 'type' => 2,
                 'type_arg' => 10,
                 'location_arg' => PLAYER2
             ),
-            array (
+            array(
                 'type' => $current_trick_color,
                 'type_arg' => 3,
                 'location_arg' => PLAYER3
             ),
-            array (
+            array(
                 'type' => 4,
                 'type_arg' => 3,
                 'location_arg' => PLAYER4
             )
         );
 
-        $this->assertSame(PLAYER1, ScoringHelper::calculateTrickWinner(
-            $playedCards,
-            $current_trick_color
-        ));
+        $this->assertSame(
+            PLAYER1,
+            ScoringHelper::calculateTrickWinner(
+                $playedCards,
+                $current_trick_color
+            )
+        );
     }
 
     // Should not happen in real game, first player sets the trick
@@ -86,22 +92,22 @@ final class ScoringHelperTest extends TestCase
         $current_trick_color = 5;
 
         $playedCards = array(
-            array (
+            array(
                 'type' => 1,
                 'type_arg' => 5,
                 'location_arg' => PLAYER1
             ),
-            array (
+            array(
                 'type' => 2,
                 'type_arg' => 10,
                 'location_arg' => PLAYER2
             ),
-            array (
+            array(
                 'type' => 3,
                 'type_arg' => 3,
                 'location_arg' => PLAYER3
             ),
-            array (
+            array(
                 'type' => 4,
                 'type_arg' => 3,
                 'location_arg' => PLAYER4

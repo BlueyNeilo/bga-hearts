@@ -51,7 +51,21 @@ class Deck extends APP_GameClass
     // If location_arg is not specified, cards are placed at location extreme position
     function createCards($cards, $location_global, $card_state_global = null)
     {
-        return;
+        $values = array();
+        $sql = "INSERT INTO card (card_type, card_type_arg, card_location, card_location_arg) VALUES ";
+        foreach ($cards as $card) {
+            $values[] = "('" . implode(
+                "','",
+                array(
+                    $card['type'],
+                    $card['type_arg'],
+                    $location_global,
+                    0
+                )
+            ) . "')";
+        }
+        $sql .= implode(",", $values);
+        $this->DbQuery($sql);
     }
 
     // Get max on min state on the specific location
@@ -179,7 +193,13 @@ class Deck extends APP_GameClass
     // note: if "order by" is used, result object is NOT indexed by card ids
     function getCardsInLocation($location, $location_arg = null, $order_by = null)
     {
-        return [];
+        $sql = "SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg ";
+        $sql .= "FROM " . $this->table;
+        $sql .= " WHERE card_location='$location' ";
+        if (!is_null($location_arg)) {
+            $sql .= "AND card_location_arg='$location_arg' ";
+        }
+        return self::getCollectionFromDB($sql);
     }
 
     function getPlayerHand($player_id)
