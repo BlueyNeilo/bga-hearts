@@ -82,10 +82,11 @@ class Notifications
     }
     public static function notifyAll($notification, $data = array(), $overrideMessage = null)
     {
-        $message = $overrideMessage ?? '';
+        $message = '';
         if (array_key_exists('message', self::lookupNotif()[$notification])) {
             $message = self::lookupNotif()[$notification]['message'];
         }
+        $message = $overrideMessage ?? $message;
 
         Game::get()->notifyAllPlayers(
             $notification,

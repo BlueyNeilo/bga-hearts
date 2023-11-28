@@ -75,39 +75,27 @@ trait State
     function stEndHand()
     {
         // Count and score points, then end the game or go to the next hand.
-        $players = Players::get();
-
-        $playerToPoints = array();
-        foreach ($players as $playerId => $player) {
-            $playerToPoints[$playerId] = 0;
-        }
-
-        // Gets all "hearts" + queen of spades (TODO)
-        $cards = Cards::getCardsWon();
-        foreach ($cards as $card) {
-            $playerId = $card['location_arg'];
-            if ($card['type'] == CardSuits::HEART) {
-                $playerToPoints[$playerId]++;
-            }
-        }
+        $cardsWon = Cards::getCardsWon();
+        $pointsByPlayer = ScoringHelper::calculateHandEndPoints($cardsWon);
 
         // Apply scores to players
-        foreach ($playerToPoints as $playerId => $points) {
-            if ($points != 0) {
-                Players::subtractScore($playerId, $points);
-                Notifications::notifyAll(
-                    "points",
-                    array($playerId, $points),
-                    clienttranslate('${playerName} gets ${nbr} hearts and loses ${nbr} points')
-                );
-            } else {
+        foreach ($pointsByPlayer as $playerId => $points) {
+            if ($points == 0) {
                 // No point lost (just notify)
                 Notifications::notifyAll(
                     "points",
                     array($playerId),
                     clienttranslate('${playerName} did not get any hearts'),
                 );
+                continue;
             }
+
+            Players::subtractScore($playerId, $points);
+            Notifications::notifyAll(
+                "points",
+                array($playerId, $points),
+                clienttranslate('${playerName} gets ${nbr} hearts and loses ${nbr} points')
+            );
         }
 
         // Publish new scores
