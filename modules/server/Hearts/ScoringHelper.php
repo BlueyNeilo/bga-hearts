@@ -50,4 +50,10 @@ class ScoringHelper
 
         return $pointsByPlayer;
     }
+
+    public static function calculateGameProgression()
+    {
+        // Assumes losing score is 100 - should take in global as part of calculation
+        return -min(array_values(Players::getScores()));
+    }
 }

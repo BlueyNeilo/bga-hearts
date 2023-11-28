@@ -54,5 +54,5 @@ Gameplay mechanics
 BGA Features
 
 - [x] Add statistics
-- [ ] Add progress handling
+- [x] Add progress handling
 - [ ] Add zombified player logic

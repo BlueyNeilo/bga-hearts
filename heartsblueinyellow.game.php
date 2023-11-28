@@ -36,6 +36,7 @@ use Hearts\Players;
 use Hearts\Globals;
 use Hearts\Cards;
 use Hearts\Stats;
+use Hearts\ScoringHelper;
 
 class HeartsBlueInYellow extends Table
 {
@@ -125,7 +126,7 @@ class HeartsBlueInYellow extends Table
     {
         // TODO: compute and return the game progression
 
-        return 0;
+        return ScoringHelper::calculateGameProgression();
     }
 
 
