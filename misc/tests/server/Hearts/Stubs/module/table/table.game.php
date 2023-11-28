@@ -80,7 +80,7 @@ class APP_DbObject extends APP_Object
         return $this->db_conn()->executeQuery($sql)->fetchOne();
     }
 
-    function getCollectionFromDB($query, $single = false)
+    function getCollectionFromDB($query, $single = false, $low_priority_select = false)
     {
         return $this->getNonEmptyCollectionFromDB($query);
     }
@@ -439,7 +439,7 @@ abstract class Table extends APP_GameClass
         $this->current_player = $player_id;
     }
 
-    protected function getCurrentPlayerId()
+    protected function getCurrentPlayerId($bReturnNullIfNotLogged = false)
     {
         return $this->current_player;
     }

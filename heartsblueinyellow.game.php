@@ -37,11 +37,11 @@ require_once('Constants.inc.php');
 use Hearts\ScoringHelper;
 use Hearts\Players;
 use Hearts\Globals;
+use Hearts\Cards;
 
 class HeartsBlueInYellow extends Table
 {
     use Hearts\Actions;
-    protected Deck $cards;
     public array $colors;
     public array $values_label;
     public static $instance = null;
@@ -64,9 +64,7 @@ class HeartsBlueInYellow extends Table
                 "pointsToLose" => GlobalIds::POINTS_TO_LOSE,
             )
         );
-
-        $this->cards = self::getNew("module.common.deck");
-        $this->cards->init("card");
+        Cards::init();
     }
 
     public static function get()
@@ -91,21 +89,10 @@ class HeartsBlueInYellow extends Table
     {
         Players::setupNewGame($players);
         Globals::setupNewGame();
-
-        // Create cards
-        $cards = array();
-        // spade, heart, diamond, club
-        foreach ($this->colors as $colorId => $color) {
-            //  2, 3, 4, ... K, A
-            for ($value = 2; $value <= 14; $value++) {
-                $cards[] = array('type' => $colorId, 'type_arg' => $value, 'nbr' => 1);
-            }
-        }
-
-        $this->cards->createCards($cards, 'deck');
+        Cards::setupNewGame();
 
         // Activate first player (which is in general a good idea :) )
-        $this->activeNextPlayer();
+        Players::activeNextPlayer();
 
         /************ End of the game initialization *****/
     }
@@ -121,21 +108,10 @@ class HeartsBlueInYellow extends Table
     */
     protected function getAllDatas()
     {
-        $result = array();
-
-        $currentPlayerId = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
-
-        // Get information about players
-        // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score FROM player ";
-        $result['players'] = self::getCollectionFromDb($sql);
-
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
-        // Cards in player hand
-        $result['hand'] = $this->cards->getCardsInLocation('hand', $currentPlayerId);
-
-        // Cards played on the table
-        $result['cardsontable'] = $this->cards->getCardsInLocation('cardsontable');
+        $result = array_merge(
+            Players::getData(),
+            Cards::getData(),
+        );
 
         return $result;
     }
@@ -165,7 +141,26 @@ class HeartsBlueInYellow extends Table
     /*
         In this space, you can put any utility methods useful for your game logic
     */
+    public function newDeck()
+    {
+        return self::getNew("module.common.deck");
+    }
 
+    // Expose protected methods for reuse in modules
+    public function getCurrentPlayerId($bReturnNullIfNotLogged = false)
+    {
+        return parent::getCurrentPlayerId($bReturnNullIfNotLogged);
+    }
+
+    public function activeNextPlayer()
+    {
+        return parent::activeNextPlayer();
+    }
+
+    public function getCollectionFromDb($sql, $bSingleValue = false, $low_priority_select = false)
+    {
+        return parent::getCollectionFromDb($sql, $bSingleValue, $low_priority_select);
+    }
 
 
     //////////////////////////////////////////////////////////////////////////////
@@ -260,13 +255,12 @@ class HeartsBlueInYellow extends Table
     function stNewHand()
     {
         // Take back all cards (from any location => null) to deck
-        $this->cards->moveAllCardsInLocation(null, "deck");
-        $this->cards->shuffle('deck');
+        Cards::resetDeck();
         // Deal 13 cards to each players
         // Create deck, shuffle it and give 13 initial cards
-        $players = self::loadPlayersBasicInfos();
-        foreach ($players as $playerId => $player) {
-            $cards = $this->cards->pickCards(13, 'deck', $playerId);
+        $playerIds = array_keys(Players::get());
+        foreach ($playerIds as $playerId) {
+            $cards = Cards::dealFromDeck($playerId);
             // Notify player about his cards
             self::notifyPlayer($playerId, 'newHand', '', array('cards' => $cards));
         }
@@ -285,25 +279,23 @@ class HeartsBlueInYellow extends Table
     function stNextPlayer()
     {
         // Active next player OR end the trick and go to the next trick OR end the hand
-        if ($this->cards->countCardInLocation('cardsontable') == 4) {
+        if (Cards::tableIsFull()) {
             // This is the end of the trick
             // Move all cards to "cardswon" of the given player
             $currentTrickColor = self::getGameStateValue('trickColor');
-            $cardsOnTable = $this->cards->getCardsInLocation('cardsontable');
+            $cardsOnTable = Cards::getCardsOnTable();
 
             $bestValuePlayerId = ScoringHelper::calculateTrickWinner($cardsOnTable, $currentTrickColor);
 
             // Trick winner starts next trick
-            $this->gamestate->changeActivePlayer($bestValuePlayerId);
-
-            $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $bestValuePlayerId);
+            Players::changeActivePlayer($bestValuePlayerId);
+            Cards::moveTableCardsToWinner($bestValuePlayerId);
 
             // Notify
             // Note: we use 2 notifications here in order to pause the display during the first notification
             //  before we move all cards to the winner (during the second)
 
-            $players = self::loadPlayersBasicInfos();
-            $bestValuePlayerName = $players[$bestValuePlayerId]['player_name'];
+            $bestValuePlayerName = Players::get()[$bestValuePlayerId]['player_name'];
 
             self::notifyAllPlayers(
                 'trickWin',
@@ -320,7 +312,7 @@ class HeartsBlueInYellow extends Table
                 array('playerId' => $bestValuePlayerId)
             );
 
-            if ($this->cards->countCardInLocation('hand') == 0) {
+            if (Cards::allHandsAreEmpty()) {
                 // End of the hand
                 $this->gamestate->nextState("endHand");
             } else {
@@ -330,8 +322,7 @@ class HeartsBlueInYellow extends Table
         } else {
             // Standard case (not the end of the trick)
             // => just active the next player
-            $playerId = self::activeNextPlayer();
-            self::giveExtraTime($playerId);
+            Players::activeNextPlayerWithTime();
             $this->gamestate->nextState('nextPlayer');
         }
     }
@@ -348,7 +339,7 @@ class HeartsBlueInYellow extends Table
 
         // Gets all "hearts" + queen of spades (TODO)
         $HEART = 2;
-        $cards = $this->cards->getCardsInLocation('cardswon');
+        $cards = Cards::getCardsWon();
         foreach ($cards as $card) {
             $playerId = $card['location_arg'];
             if ($card['type'] == $HEART) {

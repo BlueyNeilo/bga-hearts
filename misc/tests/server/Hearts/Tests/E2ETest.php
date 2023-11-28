@@ -11,6 +11,8 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Configuration;
 use Ramsey\Uuid\Uuid;
 
+use Hearts\Cards;
+
 require_once "heartsblueinyellow.game.php";
 require_once(__DIR__ . '/Util/Constants.php');
 require PROJECT_PATH . '/vendor/autoload.php';
@@ -29,7 +31,7 @@ class GameSetup extends HeartsBlueInYellow
 
     function getCards()
     {
-        return $this->cards;
+        return Cards::get();
     }
 
     function setupPlayers($player_count): array

@@ -8,7 +8,7 @@ class Players
 {
     static public function get()
     {
-        return Game::get()->players;
+        return Game::get()->loadPlayersBasicInfos();
     }
 
     static public function setupNewGame($players)
@@ -33,12 +33,39 @@ class Players
         Game::get()->reloadPlayersBasicInfos();
     }
 
+    static public function getData()
+    {
+        $sql = "SELECT player_id id, player_score score FROM player ";
+        $players_data = Game::get()->getCollectionFromDb($sql);
+        return array(
+            "players" => $players_data,
+        );
+    }
+
     static public function getActivePlayerId()
     {
         return Game::get()->getActivePlayerId();
     }
-}
 
-// Unexpected error: Wrong formatted data from gameserver 1 (method: createGame): JSON_ERROR_SYNTAX
-// Warning: The use statement with non-compound name 'GlobalIds' has no effect in /var/tournoi/release/games/heartsblueinyellow/999999-9999/heartsblueinyellow.game.php on line 36
-// {"status":1,"data":true} (reference: GS0 28/11 03:48:38)
+    static public function getCurrentPlayerId()
+    {
+        return Game::get()->getCurrentPlayerId();
+    }
+
+    static public function activeNextPlayer()
+    {
+        return Game::get()->activeNextPlayer();
+    }
+
+    static public function changeActivePlayer($playerId)
+    {
+        return Game::get()->gamestate->changeActivePlayer($playerId);
+    }
+
+    static public function activeNextPlayerWithTime()
+    {
+        $playerId = self::activeNextPlayer();
+        Game::get()->giveExtraTime($playerId);
+
+    }
+}

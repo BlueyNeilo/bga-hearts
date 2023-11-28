@@ -11,9 +11,9 @@ trait Actions
         Game::get()->checkAction("playCard");
         $playerId = Players::getActivePlayerId();
 
-        Game::get()->cards->moveCard($cardId, 'cardsontable', $playerId);
+        Cards::moveCardToTable($cardId, $playerId);
         // XXX check rules here
-        $currentCard = Game::get()->cards->getCard($cardId);
+        $currentCard = Cards::getCard($cardId);
         $value = $currentCard['type_arg'];
         $color = $currentCard['type'];
 
