@@ -2,6 +2,9 @@
 
 namespace Hearts;
 
+/**
+ * Notification system publish to UI
+ */
 class Notifications
 {
 
@@ -10,7 +13,7 @@ class Notifications
         return array(
             "playCard" => array(
                 "message" => clienttranslate('${playerName} plays ${valueDisplayed} ${colorDisplayed}'),
-                "make_args" => function ($card, $playerId) {
+                "build_args" => function ($card, $playerId) {
                     $cardId = $card["id"];
                     $value = $card["type_arg"];
                     $color = $card["type"];
@@ -27,24 +30,67 @@ class Notifications
                     );
                 }
             ),
+            "newHand" => array(
+                "build_args" => fn($cards) => array('cards' => $cards)
+            ),
+            "trickWin" => array(
+                "message" => clienttranslate('${playerName} wins the trick'),
+                "build_args" => function ($trickWinnerId) {
+                    $trickWinnerName = Players::get()[$trickWinnerId]['player_name'];
+
+                    return array(
+                        'playerId' => $trickWinnerId,
+                        'playerName' => $trickWinnerName,
+                    );
+                }
+            ),
+            "giveAllCardsToPlayer" => array(
+                "build_args" => fn($trickWinnerId) => array('playerId' => $trickWinnerId)
+            ),
+            "points" => array(
+                "build_args" => function ($playerId, $points = null) {
+                    $playerName = Players::get()[$playerId]['player_name'];
+                    $args = array(
+                        "playerId" => $playerId,
+                        "playerName" => $playerName,
+                    );
+                    if ($points) {
+                        $args = array_merge($args, array("nbr" => $points));
+                    }
+                    return $args;
+                }
+            ),
+            "newScores" => array(
+                "build_args" => fn($newScores) => array('newScores' => $newScores)
+            ),
         );
     }
 
     public static function notify($playerId, $notification, $data = array())
     {
+        $message = '';
+        if (array_key_exists('message', self::lookupNotif()[$notification])) {
+            $message = self::lookupNotif()[$notification]['message'];
+        }
+
         Game::get()->notifyPlayer(
             $playerId,
             $notification,
-            self::lookupNotif()[$notification]['message'],
-            self::lookupNotif()[$notification]["make_args"](...$data),
+            $message,
+            self::lookupNotif()[$notification]["build_args"](...$data),
         );
     }
-    public static function notifyAll($notification, $data = array())
+    public static function notifyAll($notification, $data = array(), $overrideMessage = null)
     {
+        $message = $overrideMessage ?? '';
+        if (array_key_exists('message', self::lookupNotif()[$notification])) {
+            $message = self::lookupNotif()[$notification]['message'];
+        }
+
         Game::get()->notifyAllPlayers(
             $notification,
-            self::lookupNotif()[$notification]['message'],
-            self::lookupNotif()[$notification]["make_args"](...$data),
+            $message,
+            self::lookupNotif()[$notification]["build_args"](...$data),
         );
     }
 }

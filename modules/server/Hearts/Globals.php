@@ -5,6 +5,9 @@ namespace Hearts;
 require_once(__DIR__ . '/../../../Constants.inc.php');
 use GlobalIds;
 
+/**
+ * Global variables
+ */
 class Globals
 {
     public static function init()

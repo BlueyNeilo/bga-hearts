@@ -4,6 +4,9 @@ namespace Hearts;
 
 use Deck;
 
+/**
+ * Card management
+ */
 class Cards
 {
     protected static Deck $cards;

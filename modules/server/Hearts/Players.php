@@ -4,6 +4,9 @@ namespace Hearts;
 
 use Hearts\Game;
 
+/**
+ * Player management
+ */
 class Players
 {
     static public function get()
@@ -66,6 +69,19 @@ class Players
     {
         $playerId = self::activeNextPlayer();
         Game::get()->giveExtraTime($playerId);
+    }
 
+    static public function subtractScore($playerId, $points)
+    {
+        $updateScoreSql = "UPDATE player
+            SET player_score=player_score-$points
+            WHERE player_id='$playerId'";
+        Game::get()->DbQuery($updateScoreSql);
+    }
+
+    static public function getScores()
+    {
+        $selectScoresSql = "SELECT player_id, player_score FROM player";
+        return Game::get()->getCollectionFromDb($selectScoresSql, true);
     }
 }

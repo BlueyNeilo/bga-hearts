@@ -4,6 +4,9 @@ namespace Hearts;
 
 use Hearts\Game;
 
+/**
+ * Player action logic to load into main class
+ */
 trait Actions
 {
     function playCard($cardId)
@@ -23,9 +26,9 @@ trait Actions
         }
 
         // And notify
-        Notifications::notify('playCard', array($currentCard, $playerId));
+        Notifications::notifyAll('playCard', array($currentCard, $playerId));
 
         // Next player
-        Game::get()->gamestate->nextState('playCard');
+        State::nextState('playCard');
     }
 }
