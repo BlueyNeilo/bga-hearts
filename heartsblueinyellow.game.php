@@ -20,7 +20,7 @@ $swdNamespaceAutoload = function ($class) {
     $classParts = explode('\\', $class);
     if ($classParts[0] == 'Hearts') {
         array_shift($classParts);
-        $file = dirname(__FILE__) . '/modules/server/Hearts/' . implode(DIRECTORY_SEPARATOR, $classParts) . '.php';
+        $file = __DIR__ . '/modules/server/Hearts/' . implode(DIRECTORY_SEPARATOR, $classParts) . '.php';
         if (file_exists($file)) {
             require_once $file;
         } else {
@@ -32,13 +32,19 @@ spl_autoload_register($swdNamespaceAutoload, true, true);
 
 require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 
+require_once('Constants.inc.php');
+
 use Hearts\ScoringHelper;
+use Hearts\Players;
+use Hearts\Globals;
 
 class HeartsBlueInYellow extends Table
 {
+    use Hearts\Actions;
     protected Deck $cards;
     public array $colors;
     public array $values_label;
+    public static $instance = null;
 
     function __construct()
     {
@@ -49,17 +55,23 @@ class HeartsBlueInYellow extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
+        self::$instance = $this;
         self::initGameStateLabels(
             array(
-                "currentHandType" => 10,
-                "trickColor" => 11,
-                "alreadyPlayedHearts" => 12,
-                "pointsToLose" => 13,
+                "currentHandType" => GlobalIds::CURRENT_HAND_TYPE,
+                "trickColor" => GlobalIds::TRICK_COLOR,
+                "alreadyPlayedHearts" => GlobalIds::ALREADY_PLAYED_HEARTS,
+                "pointsToLose" => GlobalIds::POINTS_TO_LOSE,
             )
         );
 
         $this->cards = self::getNew("module.common.deck");
         $this->cards->init("card");
+    }
+
+    public static function get()
+    {
+        return self::$instance ?? new HeartsBlueInYellow();
     }
 
     protected function getGameName()
@@ -77,42 +89,8 @@ class HeartsBlueInYellow extends Table
     */
     protected function setupNewGame($players, $options = array())
     {
-        // Set the colors of the players with HTML color code
-        // The default below is red/green/blue/orange/brown
-        // The number of colors defined here must correspond to the maximum number of players allowed for the gams
-        $gameinfos = self::getGameinfos();
-        $default_colors = $gameinfos['player_colors'];
-
-        // Create players
-        // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
-        $values = array();
-        foreach ($players as $player_id => $player) {
-            $color = array_shift($default_colors);
-            $values[] = "('" . $player_id . "','$color','" . $player['player_canal'] . "','" . addslashes($player['player_name']) . "','" . addslashes($player['player_avatar']) . "')";
-        }
-        $sql .= implode(",", $values);
-        self::DbQuery($sql);
-        self::reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
-        self::reloadPlayersBasicInfos();
-
-        /************ Start the game initialization *****/
-
-        // Init global values with their initial values
-
-        // Note: hand types: 0 = give 3 cards to player on the left
-        //                   1 = give 3 cards to player on the right
-        //                   2 = give 3 cards to player opposite
-        //                   3 = keep cards
-        self::setGameStateInitialValue('currentHandType', 0);
-
-        // Set current trick color to zero (= no trick color)
-        self::setGameStateInitialValue('trickColor', 0);
-
-        // Mark if we already played hearts during this hand
-        self::setGameStateInitialValue('alreadyPlayedHearts', 0);
-
-        self::setGameStateInitialValue('pointsToLose', 100);
+        Players::setupNewGame($players);
+        Globals::setupNewGame();
 
         // Create cards
         $cards = array();
@@ -224,41 +202,6 @@ class HeartsBlueInYellow extends Table
     }
 
     */
-
-    function playCard($cardId)
-    {
-        self::checkAction("playCard");
-        $playerId = self::getActivePlayerId();
-        $this->cards->moveCard($cardId, 'cardsontable', $playerId);
-        // XXX check rules here
-        $currentCard = $this->cards->getCard($cardId);
-        $value = $currentCard['type_arg'];
-        $color = $currentCard['type'];
-
-        // First player of trick sets the trick suit
-        $currentTrickColor = self::getGameStateValue('trickColor');
-        if ($currentTrickColor == 0) {
-            self::setGameStateValue('trickColor', $color);
-        }
-
-        // And notify
-        self::notifyAllPlayers(
-            'playCard',
-            clienttranslate('${playerName} plays ${valueDisplayed} ${colorDisplayed}'),
-            array(
-                'i18n' => array('colorDisplayed', 'valueDisplayed'),
-                'cardId' => $cardId,
-                'playerId' => $playerId,
-                'playerName' => self::getActivePlayerName(),
-                'value' => $value,
-                'valueDisplayed' => $this->values_label[$value],
-                'color' => $color,
-                'colorDisplayed' => $this->colors[$color]['name']
-            )
-        );
-        // Next player
-        $this->gamestate->nextState('playCard');
-    }
 
     //////////////////////////////////////////////////////////////////////////////
     //////////// Game state arguments
