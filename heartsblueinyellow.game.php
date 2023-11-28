@@ -35,6 +35,7 @@ require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 use Hearts\Players;
 use Hearts\Globals;
 use Hearts\Cards;
+use Hearts\Stats;
 
 class HeartsBlueInYellow extends Table
 {
@@ -83,6 +84,7 @@ class HeartsBlueInYellow extends Table
         Players::setupNewGame($players);
         Globals::setupNewGame();
         Cards::setupNewGame();
+        Stats::setupNewGame();
 
         // Activate first player (which is in general a good idea :) )
         Players::activeNextPlayer();

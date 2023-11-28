@@ -40,7 +40,7 @@ Dev experience
 - [x] typescript implementation
 - [x] Automated unit tests
 - [x] Add state transition diagram
-- [ ] Refactor _.ts _.game.php into files under modules or src folder
+- [x] Refactor _.ts _.game.php into files under modules or src folder
 
 Gameplay mechanics
 
@@ -53,6 +53,6 @@ Gameplay mechanics
 
 BGA Features
 
-- [ ] Add statistics
+- [x] Add statistics
 - [ ] Add progress handling
 - [ ] Add zombified player logic

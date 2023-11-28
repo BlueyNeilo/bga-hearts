@@ -38,6 +38,7 @@ trait State
 
     function stNextPlayer()
     {
+        Stats::incrementTurnCount();
         // Active next player OR end the trick and go to the next trick OR end the hand
         if (Cards::tableIsFull()) {
             // This is the end of the trick
