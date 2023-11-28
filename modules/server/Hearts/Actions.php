@@ -14,7 +14,6 @@ trait Actions
         Cards::moveCardToTable($cardId, $playerId);
         // XXX check rules here
         $currentCard = Cards::getCard($cardId);
-        $value = $currentCard['type_arg'];
         $color = $currentCard['type'];
 
         // First player of trick sets the trick suit
@@ -24,20 +23,8 @@ trait Actions
         }
 
         // And notify
-        Game::get()->notifyAllPlayers(
-            'playCard',
-            clienttranslate('${playerName} plays ${valueDisplayed} ${colorDisplayed}'),
-            array(
-                'i18n' => array('colorDisplayed', 'valueDisplayed'),
-                'cardId' => $cardId,
-                'playerId' => $playerId,
-                'playerName' => Game::get()->getActivePlayerName(),
-                'value' => $value,
-                'valueDisplayed' => Game::get()->values_label[$value],
-                'color' => $color,
-                'colorDisplayed' => Game::get()->colors[$color]['name']
-            )
-        );
+        Notifications::notify('playCard', array($currentCard, $playerId));
+
         // Next player
         Game::get()->gamestate->nextState('playCard');
     }

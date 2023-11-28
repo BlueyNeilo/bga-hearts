@@ -2,8 +2,22 @@
 
 namespace Hearts;
 
+require_once(__DIR__ . '/../../../Constants.inc.php');
+use GlobalIds;
+
 class Globals
 {
+    public static function init()
+    {
+        Game::get()->initGameStateLabels(
+            array(
+                "currentHandType" => GlobalIds::CURRENT_HAND_TYPE,
+                "trickColor" => GlobalIds::TRICK_COLOR,
+                "alreadyPlayedHearts" => GlobalIds::ALREADY_PLAYED_HEARTS,
+                "pointsToLose" => GlobalIds::POINTS_TO_LOSE,
+            )
+        );
+    }
     public static function setupNewGame()
     {
         // Init global values with their initial values
