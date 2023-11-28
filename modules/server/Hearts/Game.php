@@ -4,6 +4,8 @@ namespace Hearts;
 
 use HeartsBlueInYellow;
 
+require_once(__DIR__ . '/../../../Constants.inc.php');
+
 /**
  * Singleton wrapper of main game class
  */

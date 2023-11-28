@@ -2,6 +2,8 @@
 
 namespace Hearts;
 
+use CardSuits;
+
 /**
  * State actions to load into main class
  */
@@ -30,7 +32,7 @@ trait State
     {
         // New trick: active the player who wins the last trick, or the player who own the club-2 card
         // Reset trick color to 0 (= no color)
-        Game::get()->setGameStateInitialValue('trickColor', 0);
+        Game::get()->setGameStateInitialValue('trickColor', CardSuits::UNDEFINED);
         self::nextState();
     }
 
@@ -81,11 +83,10 @@ trait State
         }
 
         // Gets all "hearts" + queen of spades (TODO)
-        $HEART = 2;
         $cards = Cards::getCardsWon();
         foreach ($cards as $card) {
             $playerId = $card['location_arg'];
-            if ($card['type'] == $HEART) {
+            if ($card['type'] == CardSuits::HEART) {
                 $playerToPoints[$playerId]++;
             }
         }

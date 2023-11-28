@@ -49,28 +49,29 @@
 
 //    !! It is not a good idea to modify this file when a game is running !!
 
+require_once(__DIR__ . '/Constants.inc.php');
 
 $machinestates = array(
 
-    // The initial state. Please do not modify.
-    1 => array(
+        // The initial state. Please do not modify.
+    StateIds::GAME_SETUP => array(
         "name" => "gameSetup",
         "description" => "",
         "type" => "manager",
         "action" => "stGameSetup",
-        "transitions" => array("" => 20)
+        "transitions" => array("" => StateIds::NEW_HAND)
     ),
 
-    // Hand states
-    20 => array(
+        // Hand states
+    StateIds::NEW_HAND => array(
         "name" => "newHand",
         "description" => "",
         "type" => "game",
         "action" => "stNewHand",
         "updateGameProgression" => true,
-        "transitions" => array("" => 30)
+        "transitions" => array("" => StateIds::NEW_TRICK)
     ),
-    21 => array(
+    StateIds::GIVE_CARDS => array(
         "name" => "giveCards",
         "description" => clienttranslate('Some players must choose 3 cards to give to ${direction}'),
         "descriptionmyturn" => clienttranslate('${you} must choose 3 cards to give to ${direction}'),
@@ -78,57 +79,69 @@ $machinestates = array(
         "action" => "stGiveCards",
         "args" => "argGiveCards",
         "possibleactions" => array("giveCards"),
-        "transitions" => array("giveCards" => 22, "skip" => 22)
+        "transitions" => array(
+            "giveCards" => StateIds::TAKE_CARDS,
+            "skip" => StateIds::TAKE_CARDS
+        )
     ),
-    22 => array(
+    StateIds::TAKE_CARDS => array(
         "name" => "takeCards",
         "description" => "",
         "type" => "game",
         "action" => "stTakeCards",
-        "transitions" => array("startHand" => 30, "skip" => 30)
+        "transitions" => array(
+            "startHand" => StateIds::NEW_TRICK,
+            "skip" => StateIds::NEW_TRICK
+        )
     ),
 
-    // Trick
-    30 => array(
+        // Trick
+    StateIds::NEW_TRICK => array(
         "name" => "newTrick",
         "description" => "",
         "type" => "game",
         "action" => "stNewTrick",
-        "transitions" => array("" => 31)
+        "transitions" => array("" => StateIds::PLAYER_TURN)
     ),
-    31 => array(
+    StateIds::PLAYER_TURN => array(
         "name" => "playerTurn",
         "description" => clienttranslate('${actplayer} must play a card'),
         "descriptionmyturn" => clienttranslate('${you} must play a card'),
         "type" => "activeplayer",
         "possibleactions" => array("playCard"),
-        "transitions" => array("playCard" => 32)
+        "transitions" => array("playCard" => StateIds::NEXT_PLAYER)
     ),
-    32 => array(
+    StateIds::NEXT_PLAYER => array(
         "name" => "nextPlayer",
         "description" => "",
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array("nextPlayer" => 31, "nextTrick" => 30, "endHand" => 40)
+        "transitions" => array(
+            "nextPlayer" => StateIds::PLAYER_TURN,
+            "nextTrick" => StateIds::NEW_TRICK,
+            "endHand" => StateIds::END_HAND
+        )
     ),
 
-    // End of the hand (scoring, etc...)
-    40 => array(
+        // End of the hand (scoring, etc...)
+    StateIds::END_HAND => array(
         "name" => "endHand",
         "description" => "",
         "type" => "game",
         "action" => "stEndHand",
-        "transitions" => array("nextHand" => 20, "endGame" => 99)
+        "transitions" => array(
+            "nextHand" => StateIds::NEW_HAND,
+            "endGame" => StateIds::GAME_END
+        )
     ),
 
-    // Final state.
-    // Please do not modify (and do not overload action/args methods).
-    99 => array(
+        // Final state.
+        // Please do not modify (and do not overload action/args methods).
+    StateIds::GAME_END => array(
         "name" => "gameEnd",
         "description" => clienttranslate("End of game"),
         "type" => "manager",
         "action" => "stGameEnd",
         "args" => "argGameEnd"
     )
-
 );

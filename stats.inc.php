@@ -47,13 +47,15 @@
 
 */
 
+require_once(__DIR__ . '/Constants.inc.php');
+
 $stats_type = array(
 
     // Statistics global to table
     "table" => array(
 
         "turns_number" => array(
-            "id" => 10,
+            "id" => StatIds::TABLE_TURNS_NUMBER,
             "name" => totranslate("Number of turns"),
             "type" => "int"
         ),
@@ -75,7 +77,7 @@ $stats_type = array(
     // Statistics existing for each player
     "player" => array(
         "turns_number" => array(
-            "id" => 10,
+            "id" => StatIds::PLAYER_TURNS_NUMBER,
             "name" => totranslate("Number of turns"),
             "type" => "int"
         ),

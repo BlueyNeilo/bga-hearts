@@ -3,6 +3,7 @@
 namespace Hearts;
 
 use Deck;
+use CardValues;
 
 /**
  * Card management
@@ -28,7 +29,7 @@ class Cards
         // spade, heart, diamond, club
         foreach (Game::get()->colors as $colorId => $color) {
             //  2, 3, 4, ... K, A
-            for ($value = 2; $value <= 14; $value++) {
+            for ($value = CardValues::TWO; $value <= CardValues::ACE; $value++) {
                 $cards[] = array('type' => $colorId, 'type_arg' => $value, 'nbr' => 1);
             }
         }

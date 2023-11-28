@@ -2,7 +2,6 @@
 
 namespace Hearts;
 
-require_once(__DIR__ . '/../../../Constants.inc.php');
 use GlobalIds;
 
 /**
